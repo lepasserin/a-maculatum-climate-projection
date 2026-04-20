@@ -1,0 +1,378 @@
+```{r}
+library(tidyverse)
+library(lubridate)
+library(itsmr)
+```
+
+This code takes in observed and simulated climate data, and applies two corrections following pre-existing procedures. Corrections are applied to the
+
+## Preliminary Data Cleaning
+
+```{r}
+
+# read in raw data
+rawAlg <- read.csv("Algonquin East Gate Climate Data.csv")
+rawEC <- read.csv("EC_ClimateProjections.csv")
+
+# preliminary cleaning
+cleanAlg <- rawAlg %>% 
+  select(
+  LOCAL_DATE, LOCAL_DAY, LOCAL_YEAR, LOCAL_MONTH,
+  MEAN_TEMPERATURE, MIN_TEMPERATURE, TOTAL_PRECIPITATION
+  ) %>%
+  mutate(decimalDate = decimal_date(ymd(LOCAL_DATE))) %>%
+  filter(LOCAL_MONTH %in% c(3, 4, 5)) # this also removes completely NA rows
+
+cleanEC <- rawEC %>% 
+  filter(year %in% 2005:2024) %>%
+  filter(scenario == "SSP585") %>% # only using SSP585 to determine correction factors
+  mutate(decimalDate = decimal_date(ymd(date))) %>%
+  arrange(decimalDate)
+
+# check that all rows are unique dates
+nrow(cleanEC) == length(unique(cleanEC$date))
+nrow(cleanAlg) == length(unique(cleanAlg$LOCAL_DATE))
+# find the dates that are missing from Alg data from 2005-2024
+missing_dates <- lubridate::setdiff(unique(cleanEC$date), unique(cleanAlg$LOCAL_DATE))
+# remove them from EC
+cleanEC <- cleanEC %>% filter(!(date %in% missing_dates))
+# final checks of date accordance
+all(cleanEC$date == cleanAlg$LOCAL_DATE)
+all(cleanEC$decimalDate == cleanAlg$decimalDate)
+```
+
+## Bias Correction Approach
+
+Both methods are only built to correct systematic bias (i.e. deviance from an expected average), and do not take into account data distributions. Methods also assume stationarity: systematic bias in the past will manifest itself in the same way in the future. Methods are applied to individual months.
+
+Let $i$ represent a given March, where $i \in \{2005, ..., 2024\}$. Then, $T_{i,j}^{data}$ and $P_{i,j}^{data}$ represent the temperature (mean or minimum) and precipitation (total) of the $j^{th}$ day in the $i^{th}$ March, for a given dataset, either observed $OBS$, simulated $SIM$, or bias-corrected/adjusted $ADJ$.
+
+1.  **Additive Linear Scaling (for temperature)**
+
+    $$
+    C = \left(\sum_{i=2005}^{2024}{T_i^{OBS} - T_i^{SIM}}\right) / 20
+    $$
+
+    $$
+    T_{i,j}^{ADJ} = C + T_{i,j}^{SIM}
+    $$
+
+    Note: This procedure is repeated for March, April, and May, for mean and minimum temperature, resulting in the estimation of 6 scaling coefficients.
+
+2.  **Local Intensity Scaling (for precipitation)**
+
+    First, a fixed threshold $t$ is determined such that the average number of days with simulated precipitations below $t$ is equal to the average number of observed dry days. Then, we determine the average precipitation among observed wet days, and simulated days above the threshold. Their ratio gives the change in expected intensity of wet days $C$ .
+
+$$
+P_{i,j}^{ADJ} =\begin{cases}0, & \text{if } P_{i,j}^{SIM} < t \\
+\left(P_{i,j}^{SIM} - t\right) \times C, & \text{otherwise}\end{cases}
+$$
+
+This method attempts to simultaneously correct the underestimated number of dry days, along with the underestimated intensity of wet days.
+
+Note that our corrections are applied to SSP585 (status-quo model) and assumed to be similar for the other datasets (although the validity of this assumption can easily be verified by changing one line in the existing code, and comparing the fitted scaling constants).
+
+## 1. Temperature Bias Correction
+
+```{r}
+
+monthEC <- cleanEC %>% group_by(year, month) %>% summarise(
+  days = n(),
+  meanTas = mean(tas),
+  meanTasmin = mean(tasmin)
+  ) %>% arrange(year, month)
+
+monthAlg <- cleanAlg %>% group_by(LOCAL_YEAR, LOCAL_MONTH) %>% summarise(
+  days = n(),
+  propNATas = sum(is.na(MEAN_TEMPERATURE)) / days,
+  propNATasmin = sum(is.na(MIN_TEMPERATURE)) / days,
+  useTas = ifelse(propNATas > 0.2, FALSE, TRUE),
+  useTasmin = ifelse(propNATasmin > 0.2, FALSE, TRUE),
+  meanTas = mean(MEAN_TEMPERATURE, na.rm = TRUE),
+  meanTasmin = mean(MIN_TEMPERATURE, na.rm = TRUE)
+  ) %>% arrange(LOCAL_YEAR, LOCAL_MONTH) %>% 
+  mutate(LOCAL_MONTH = case_when(
+    LOCAL_MONTH == 3 ~ "Mar",
+    LOCAL_MONTH == 4 ~ "Apr",
+    LOCAL_MONTH == 5 ~"May")
+    )
+
+# graph use... onto EC data:
+monthEC <- monthEC %>%
+  left_join(monthAlg %>% 
+              select(LOCAL_YEAR, LOCAL_MONTH, useTas, useTasmin),
+            by = c("year" = "LOCAL_YEAR", "month" = "LOCAL_MONTH"))
+
+# calculate temperature offsets
+calculate_Tas_offsets <- function() {
+  # return vector
+  returnVector <- numeric(3)
+  # filter datasets
+  EC3 <- monthEC %>% filter(month == "Mar") %>% filter(useTas)
+  Alg3 <- monthAlg %>% filter(LOCAL_MONTH == "Mar") %>% filter(useTas)
+  EC4 <- monthEC %>% filter(month == "Apr")  %>% filter(useTas)
+  Alg4 <- monthAlg %>% filter(LOCAL_MONTH == "Apr") %>% filter(useTas)
+  EC5 <- monthEC %>% filter(month == "May")  %>% filter(useTas)
+  Alg5 <- monthAlg %>% filter(LOCAL_MONTH == "May") %>% filter(useTas)
+  # cacluate Tas offsets
+  returnVector[1] = mean(Alg3$meanTas - EC3$meanTas)
+  returnVector[2] = mean(Alg4$meanTas - EC4$meanTas)
+  returnVector[3] = mean(Alg5$meanTas - EC5$meanTas)
+  # return
+  return(returnVector)
+}
+
+calculate_Tasmin_offsets <- function() {
+  # return vector
+  returnVector <- numeric(3)
+  # filter datasets
+  EC3 <- monthEC %>% filter(month == "Mar")  %>% filter(useTasmin)
+  Alg3 <- monthAlg %>% filter(LOCAL_MONTH == "Mar") %>% filter(useTasmin)
+  EC4 <- monthEC %>% filter(month == "Apr")  %>% filter(useTasmin)
+  Alg4 <- monthAlg %>% filter(LOCAL_MONTH == "Apr") %>% filter(useTasmin)
+  EC5 <- monthEC %>% filter(month == "May")  %>% filter(useTasmin)
+  Alg5 <- monthAlg %>% filter(LOCAL_MONTH == "May") %>% filter(useTasmin)
+  # cacluate Tas offsets
+  returnVector[1] = mean(Alg3$meanTasmin - EC3$meanTasmin)
+  returnVector[2] = mean(Alg4$meanTasmin - EC4$meanTasmin)
+  returnVector[3] = mean(Alg5$meanTasmin - EC5$meanTasmin)
+  # return
+  return(returnVector)
+}
+
+monthlyTasOffsets <-  calculate_Tas_offsets()
+monthlyTasminOffsets <- calculate_Tasmin_offsets()
+```
+
+## 2. Precipitation Bias Correction
+
+### 2.1 Determining t
+
+```{r}
+options(dplyr.summarise.inform = FALSE) # stops wall of text from being outputted when run
+
+# extract necessary observed monthly statistics
+monthAlg2 <- cleanAlg %>% group_by(LOCAL_YEAR, LOCAL_MONTH) %>% summarise(
+  days = n(),
+  NAPrdays = sum(is.na(TOTAL_PRECIPITATION)),
+  wetDays = sum(TOTAL_PRECIPITATION > 0, na.rm = TRUE),
+  wetDaysTotalPr = sum(ifelse(TOTAL_PRECIPITATION > 0, TOTAL_PRECIPITATION, 0), na.rm = TRUE),
+  usePr = ifelse(NAPrdays / days > 0.2, FALSE, TRUE)) %>% arrange(LOCAL_YEAR, LOCAL_MONTH) %>% 
+  mutate(LOCAL_MONTH = case_when(
+    LOCAL_MONTH == 3 ~ "Mar",
+    LOCAL_MONTH == 4 ~ "Apr",
+    LOCAL_MONTH == 5 ~"May")
+    ) %>% arrange(LOCAL_YEAR, LOCAL_MONTH)
+
+# get observed and simulated (target function) wet day frequencies
+
+get_wet_day_frequenciesOBS <- function(monthlyObsData) {
+  WDFs <- numeric()
+  for (month in c("Mar", "Apr", "May")) {
+    filteredData <- monthlyObsData %>% filter(LOCAL_MONTH == month) %>% filter(usePr)
+    filteredData <- filteredData %>% mutate(target = (wetDays / (days - NAPrdays)))
+    WDFs <- c(WDFs, mean(filteredData$target))
+  }
+  return(WDFs)
+}
+
+get_monthly_data_summarySIM <- function(fullSimData, t) {
+  thresholds <- data.frame(month = c("Mar", "Apr", "May"), t_val = t)
+  monthlySimData <- fullSimData %>% 
+    left_join(thresholds, by = "month") %>%
+    group_by(year, month) %>% 
+    summarise(days = n(),
+              wetDays = sum(pr > t_val),
+              wetDaysTotalPr = sum(ifelse(pr > t_val, pr, 0))
+              )
+    monthlySimData <- monthlySimData %>% left_join(monthAlg2 %>% 
+              select(LOCAL_YEAR, LOCAL_MONTH, usePr),
+            by = c("year" = "LOCAL_YEAR", "month" = "LOCAL_MONTH"))
+  return(monthlySimData)
+}
+
+get_wet_day_frequenciesSIM <- function(fullSimData, t) {
+  # get monthly data summaries
+  monthlySimData <- get_monthly_data_summarySIM(fullSimData, t)
+  # cacluate wet day frequencies for. each month
+  WDFs <- numeric()
+  for (m in c("Mar", "Apr", "May")) {
+    filteredData <- monthlySimData %>% filter(month == m) %>% filter(usePr)
+    filteredData <- filteredData %>% mutate(target = (wetDays / days))
+    WDFs <- c(WDFs, mean(filteredData$target))
+  }
+  return(WDFs)
+}
+
+# find t that minimizes sum of squared error between these two function outputs
+targetVector <- get_wet_day_frequenciesOBS(monthAlg2)
+squared_error <- function(t) {
+  candidateVector <- get_wet_day_frequenciesSIM(cleanEC, t)
+  return(sum((candidateVector - targetVector)**2))
+}
+# uncomment to run gradient descent
+# monthlyPrThresholds <- optim(par = c(2, 2, 2), fn = squared_error)$par
+```
+
+### 2.2 Determining scaling factors
+
+```{r}
+
+monthEC2 <- get_monthly_data_summarySIM(cleanEC, monthlyPrThresholds)
+
+# cacluate scaling factor
+calculate_scaling_factors <- function(t) {
+  returnVector <- numeric()
+  for (i in 1:3) {
+    m <- c("Mar", "Apr", "May")[i]
+    filteredDataEC <- monthEC2 %>% filter(month == m) %>% filter(usePr)
+    filteredDataAlg <- monthAlg2 %>% filter(LOCAL_MONTH == m) %>% filter(usePr)
+    num <- mean(filteredDataAlg$wetDaysTotalPr / filteredDataAlg$wetDays)
+    den <- mean(filteredDataEC$wetDaysTotalPr / filteredDataEC$wetDays) - t[i]
+    target <- num / den
+    returnVector <- c(returnVector, target)
+  }
+  return(returnVector)
+}
+
+montlyPrScalingFactors <- calculate_scaling_factors(monthlyPrThresholds)
+```
+
+| Scenario | Variable             | Corrections                          |
+|----------|----------------------|--------------------------------------|
+| SSP1-2.6 | tas                  | -1.282590 \| -1.5110422 \| -0.823801 |
+| SSP2-4.5 | tas                  | -1.702929 \| -1.645397 \| -0.664139  |
+| SSP5-8.5 | tas                  | -1.548335 \| -1.3805482 \| -0.584340 |
+| SSP1-2.6 | tasmin               | -2.848523 \| -1.982431 \| -1.705043  |
+| SSP2-4.5 | tasmin               | -2.922774 \| -2.012269 \| -1.709308  |
+| SSP5-8.5 | tasmin               | -2.916618 \| -1.903555 \| -1.668913  |
+| SSP1-2.6 | pr (threshold)       | 2.076696 \| 2.127830 \| 2.533150     |
+| SSP2-4.5 | pr (threshold)       | 2.146306 \| 2.162294 \| 2.611324     |
+| SSP5-8.5 | pr (threshold)       | 2.099063 \| 2.156163 \| 2.567102     |
+| SSP1-2.6 | pr (scaling factors) | 3.769211 \| 5.754566 \| 6.900189     |
+| SSP2-4.5 | pr (scaling factors) | 3.707467 \| 5.649738 \| 6.845980     |
+| SSP5-8.5 | pr (scaling factors) | 4.076968 \| 5.930714 \| 6.853495     |
+
+The bias correction constants are quite consistent accross scenarios, and don't show any identifiable trends related to scenario. Most observed differences are within less than 0.1 (C or mm) of each other, with the notable exceptions of:
+
+-   tas differs greater than 0.1 between all scenarios
+
+-   SSP5-8.5 vs. others differ by greater than 0.1 in their precipitation scaling factors for March and April.
+
+## 3. Apply Bias Correction and Validate with Plots
+
+```{r}
+# apply bias corrections to full EC dataset
+
+biasCorrectedEC <- rawEC %>% 
+  mutate(tasBC =    case_when(month == "Mar" ~ monthlyTasOffsets[1] + tas,
+                              month == "Apr" ~ monthlyTasOffsets[2] + tas,
+                              month == "May" ~ monthlyTasOffsets[3] + tas)
+         ) %>%
+  mutate(tasminBC = case_when(month == "Mar" ~ monthlyTasminOffsets[1] + tasmin,
+                              month == "Apr" ~ monthlyTasminOffsets[2] + tasmin,
+                              month == "May" ~ monthlyTasminOffsets[3] + tasmin)
+         ) %>%
+  mutate(prBC =     case_when(
+    month == "Mar" ~ ifelse(pr < monthlyPrThresholds[1],
+                            0,
+                            (pr - monthlyPrThresholds[1]) * montlyPrScalingFactors[1]),
+    month == "Apr" ~ ifelse(pr < monthlyPrThresholds[2],
+                            0,
+                            (pr - monthlyPrThresholds[2]) * montlyPrScalingFactors[2]),
+    month == "May" ~ ifelse(pr < monthlyPrThresholds[3],
+                            0,
+                            (pr - monthlyPrThresholds[3]) * montlyPrScalingFactors[3]))
+    )
+
+# check that the data looks to be bias-corrected
+
+cleanBCEC <- biasCorrectedEC %>% 
+  filter(year %in% 2005:2024) %>%
+  filter(scenario == "SSP245") %>%
+  mutate(decimalDate = decimal_date(ymd(date))) %>%
+  arrange(decimalDate)
+missing_dates2 <- setdiff(unique(cleanBCEC$date), unique(cleanAlg$LOCAL_DATE))
+cleanBCEC <- cleanBCEC %>% filter(!(date %in% missing_dates2))
+
+yearPlot <- 2010
+plotBCEC <- cleanBCEC %>% filter(year== yearPlot)
+plotAlg <- cleanAlg %>% filter(LOCAL_YEAR == yearPlot)
+x_axis <- plotBCEC$decimalDate
+
+# PLOT MEAN TEMP
+plot(x = x_axis, y = plotBCEC$tasBC, type = "l", col = "navyblue", ylim = c(-30, 25),
+     xlab = "Time (Year)", ylab = "Mean Daily Temperature")
+lines(x = x_axis, y = plotBCEC$tas, col = "cornflowerblue")
+lines(x = x_axis, y = plotAlg$MEAN_TEMPERATURE)
+lines(x = x_axis, y = smooth.ma(plotAlg$MEAN_TEMPERATURE, 10), col = "grey")
+
+# PLOT MIN TEMP
+plot(x = x_axis, y = plotBCEC$tasminBC, type = "l", col = "navyblue", ylim = c(-30, 25),
+     xlab = "Time (Year)", ylab = "Min Daily Temperature")
+lines(x = x_axis, y = plotBCEC$tasmin, col = "cornflowerblue")
+lines(x = x_axis, y = plotAlg$MIN_TEMPERATURE)
+lines(x = x_axis, y = smooth.ma(plotAlg$MIN_TEMPERATURE, 10), col = "grey")
+
+# PLOT PRECIP
+plot(x = x_axis, y = plotBCEC$prBC, type = "l", col = "navyblue", ylim = c(0, 25),
+     xlab = "Time (Year)", ylab = "Total Daily Precipitation")
+lines(x = x_axis, y = plotBCEC$pr, col = "cornflowerblue")
+lines(x = x_axis, y = plotAlg$TOTAL_PRECIPITATION)
+lines(x = x_axis, y = smooth.ma(plotAlg$TOTAL_PRECIPITATION, 10), col = "grey")
+
+# compare SIM, ADJ, and OBS precipitation means
+
+monthBCEC <- cleanBCEC %>% group_by(year, month) %>% summarise(
+  days = n(),
+  meanPr = mean(pr),
+  propRainyDays = sum(pr > 0) / days,
+  meanPrBC = mean(prBC),
+  propRainyDaysBC = sum(prBC > 0) / days) %>% arrange(year, month)
+  
+
+obs <- monthAlg2$wetDaysTotalPr / (monthAlg2$days - monthAlg2$NAPrdays)
+
+monthBCEC %>% ggplot(aes(x = obs)) + 
+  geom_point(aes(y = meanPrBC), color = "navy", alpha = 0.5) + 
+  geom_point(aes(y = meanPr), color = "cornflowerblue", alpha = 0.5) + 
+  geom_smooth(aes(y = meanPrBC), method = "lm", color = "navy", alpha = 0.15) + 
+  geom_smooth(aes(y = meanPr), method = "lm", color = "cornflowerblue", alpha = 0.15) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + 
+  geom_hline(yintercept = mean(obs, na.rm = TRUE), color = "red", linetype = "dotted") +
+  geom_hline(aes(yintercept = mean(meanPrBC)), color = "navy", linetype = "dotted") +
+  geom_hline(aes(yintercept = mean(meanPr)), color = "cornflowerblue", linetype = "dotted") +
+  coord_fixed(ratio = 1) +
+  theme_classic() +
+  labs(x = "Observed Precipitation (Monthly Average)",
+       y = "Simulated Precipitation (Montly Average)")
+
+# compare proportion of rainy days prediction
+
+obs <- monthAlg2$wetDays / (monthAlg2$days - monthAlg2$NAPrdays)
+
+monthBCEC %>% ggplot(aes(x = obs)) +
+  geom_point(aes(y = propRainyDaysBC), color = "navy", alpha = 0.5) + 
+  geom_point(aes(y = propRainyDays), color = "cornflowerblue", alpha = 0.5) +
+  geom_hline(yintercept = mean(obs, na.rm = TRUE),
+             color = "red", linetype = "dotted") +
+  geom_hline(aes(yintercept = mean(propRainyDaysBC)),
+             color = "navy", linetype = "dotted") +
+  geom_hline(aes(yintercept = mean(propRainyDays)),
+             color = "cornflowerblue", linetype = "dotted") +
+  coord_equal(xlim = c(0, 1), ylim = c(0, 1)) +
+  theme_classic() +
+  labs(x = "Observed Proportion of Rainy Days (Monthly)",
+       y = "Simulated Proportion of Rainy Days (Monthly)")
+```
+
+For precipitation, ADJ's marginal variance is much closer to that of OBS (above plot is 1:1), at the cost of slightly overestimating precipitation on average ( dotted lines). SIM is not correlated with OBS, whereas ADJ is slighty (black dashed line is the 1:1 perfect prediction line). ADJ's average proportion of rainly days accords exactly with the data (expecterd by construction), but fails to have any predictive power when compared to OBS. Variance is also smaller than OBS, and the ADJ data always predicts that between 20% and 80% of the days in the month will be rainy.
+
+For both temperature metrics, we see generally better adherence to the local observed averages, but as only a shift was used, the shapes of ADJ and OBS remain identical, the simulation data still significantly underestimating the daily temperature variation.
+
+All of these results remained the same when the bias correction factors were derived from the other scenarios.
+
+```{r}
+# write resulting data to a new .csv file
+write_csv(biasCorrectedEC, "EC_ClimateProjections_BC.csv")
+```

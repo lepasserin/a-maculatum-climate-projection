@@ -1,0 +1,387 @@
+```{r}
+# load in libraries used
+library(tidyverse)
+library(lubridate)
+library(readxl)
+
+# read in 3 datasets used
+ECdata <- read.csv("EC_ClimateProjections_BC.csv")
+BLISS_study_data <- read_excel("BLISS_2008_2022_study_variables.xlsx")
+BLISS_unstandardized <- read.csv("Unstandardized_INB.T_OUT.P.csv")
+BLISS_unstandardized <- BLISS_unstandardized[complete.cases(BLISS_unstandardized), ]
+```
+
+# Forecasting Survivorship
+
+**Ultimate Goal**: produce a dataset where for each year-scenario pair from 2025 - 2100 we have estimated (i) average minimum temperature of the breeding season, and (ii) precipitation (measured by calculating the total precipitation over a 21-day interval centered around peak egg mass date. From these two estimates, we use the survivorship model to estimate the average adult female survivorship for that year-scenario pair.
+
+**Some Information:**
+
+-   The breeding season is defined to start on the Bat Lake (BL) ice out date, and end at peak egg mass date.
+
+-   We used mean April temperature to predict Bat Lake ice out date using simple linear regression.
+
+-   Then, we assumed that peak egg mass date always occurs 22 days after ice out (corresponding to the average observed breeding season length during the 2008-2022 BLISS study period). Using these two estimates, we can easily construct both the breeding interval as well as the precipitation interval.
+
+-   Using these intervals along with daily ENVCAN estimates of minimum temperature and total precipitation, we calculated (i) and (ii) for each year-scenario pair.
+
+-   *Note: all dates are measured and used ordinally*
+
+**Regression information:**
+
+-   BL ice out date is predicted well ($R^2 = 0.5$) by mean April temperature (Note: estimates taken from a screenshot of the summary output of a fitted simple regression model).
+
+## 1. Forecasting Intervals
+
+### 1.1. Predicting Bat Lake Ice Out From GCM Mean April Temperature
+
+```{r}
+
+get_meanAprilTemp_from_EC <- function(yr, scen, dataType="ADJ") {
+  # get focal data
+  focalData <- ECdata %>% filter(scenario == scen,
+                                 year == yr,
+                                 month == "Apr")
+  # calculate thing
+  if (dataType == "ADJ") {
+    return(mean(focalData$tasBC))
+  }
+  if (dataType == "SIM") {
+    return(mean(focalData$tas))
+  }
+  stop("{get_meanAprilTemp_from_EC}: invalid dataType entered.")
+}
+
+get_iceOut_from_meanAprilTemp <- function(meanAprilTemp) {
+  # SOURCE: Dylan did a regression (iMessage screenshot)
+  m <- -3.1373
+  b <- 125.5190
+  return(round((m*meanAprilTemp) + b))
+}
+
+# get ice out estimates
+iceOutEstimatesADJ <- numeric()
+iceOutEstimatesSIM <- numeric()
+for (yr in 2000:2100) {
+  currMATADJ <- get_meanAprilTemp_from_EC(yr, "SSP585", "ADJ")
+  currMATSIM <- get_meanAprilTemp_from_EC(yr, "SSP585", "SIM")
+  curriceOutADJ <- get_iceOut_from_meanAprilTemp(currMATADJ)
+  curriceOutSIM <- get_iceOut_from_meanAprilTemp(currMATSIM)
+  iceOutEstimatesADJ <- c(iceOutEstimatesADJ, curriceOutADJ)
+  iceOutEstimatesSIM <- c(iceOutEstimatesSIM, curriceOutSIM)
+}
+
+# compare with true observations
+realiceOut <- numeric(101)
+realiceOut[1:8] <- NA
+realiceOut[9:23] <- BLISS_study_data$Ice.Out.Ordinal
+realiceOut[24:101] <- NA
+
+plot(x = 2000:2040, y = iceOutEstimatesADJ[1:41],
+     type = "l", ylim = c(100, 135), col = "navy", xlab = "", ylab = "Ice Out (Ordinal)")
+lines(x = 2000:2040, y = iceOutEstimatesSIM[1:41], col = "cornflowerblue")
+lines(x = 2000:2040, y = realiceOut[1:41], lw = 2)
+lines(x = 2000:2040, y = rep(mean(realiceOut, na.rm = T), 41), col = "grey")
+abline(v = c(2008, 2022), col = "darkred", lty = 2, lwd = 1.5)
+
+```
+
+Plot shows that applying bias correction to mean temperature also corrected the systematically early ice outs predicted by the unaltered GCM.
+
+### 1.2 Predicting Peak Egg Mass from Bat Lake Ice Out
+
+```{r}
+
+# setup
+mean_breedingSeasonLength <- round(mean(BLISS_study_data$Breeding.Season.Length, na.rm = T))
+# assumption: peak egg mass always occurs 22 days after ice out
+get_peakEggMass_from_iceOut <- function(iceOut) {
+  return(iceOut + mean_breedingSeasonLength)
+}
+
+# get peak egg mass estimates
+peakEggMassEstimatesADJ <- get_peakEggMass_from_iceOut(iceOutEstimatesADJ) 
+peakEggMassEstimatesSIM <- get_peakEggMass_from_iceOut(iceOutEstimatesSIM) 
+
+# compare with true observations
+#realpeakEggMass <- numeric(101)
+#realpeakEggMass[1:8] <- NA
+#realpeakEggMass[9:23] <- BLISS_study_data$Peak.Egg.Mass.Ordinal
+#realpeakEggMass[24:101] <- NA
+
+#plot(x = 2000:2040, y = peakEggMassEstimatesADJ[1:41],
+#     type = "l", ylim = c(120, 150), col = "navy", xlab = "", ylab = "Peak Egg Mass (Ordinal)")
+#lines(x = 2000:2040, y = peakEggMassEstimatesSIM[1:41], col = "cornflowerblue")
+#lines(x = 2000:2040, y = realpeakEggMass[1:41], lw = 2)
+#lines(x = 2000:2040, y = rep(mean(realpeakEggMass, na.rm = T), 41), col = "grey")
+#abline(v = c(2008, 2022), col = "darkred", lty = 2, lwd = 1.5)
+```
+
+## 2. Calculations within Intervals
+
+### 2.1 Logic Functions
+
+```{r}
+
+# GET CONSTANTS
+obsTmean <- mean(BLISS_unstandardized$T.INB)
+obsTsd <- sd(BLISS_unstandardized$T.INB)
+obsPmean <- mean(BLISS_unstandardized$P.OUT)
+obsPsd <- sd(BLISS_unstandardized$P.OUT)
+precipIntervalRadius <- 10 # TODO: why ??????????????????????????????????????
+# SOURCE: Dylan's model fitted values
+b0 <- 0.9656941 # intercept
+b1 <- -0.762042 # standardized temp
+b2 <- 0.4460179 # standardized precipitation
+
+
+# CACLUATE INDICES
+
+get_climateIndices <- function(yr, scen, iceOut, eggMass, dataType="ADJ") {
+  # get filtered data
+  tempInterval <- ECdata %>% filter(year == yr,
+                                    scenario == scen,
+                                    ordinalDay >= iceOut,
+                                    ordinalDay <= eggMass)
+  precipInterval <- ECdata %>% filter(year == yr,
+                                      scenario == scen,
+                                      ordinalDay >= eggMass - precipIntervalRadius,
+                                      ordinalDay <= eggMass + precipIntervalRadius)
+  # in filtered window, calculate indicators: ADJ
+  if (dataType == "ADJ") {
+    temp = mean(tempInterval$tasminBC)
+    wetDays <- precipInterval %>% filter(prBC > 0.0)
+    if (nrow(wetDays) == 0) {
+      precip <- 0
+      warning("{get_climateIndices}: WARNING: a season was found with no wet days.")
+    }
+    else {
+      precip <- sum(precipInterval$prBC) / (nrow(wetDays) * nrow(precipInterval))
+    }
+    return(c(temp, precip))
+  }
+  # in filtered window, calculate indicators: SIM
+  if (dataType == "SIM") {
+    temp <- mean(tempInterval$tasmin)
+    wetDays <- precipInterval %>% filter(pr > 0.0)
+    if (nrow(wetDays) == 0) {
+      precip <- 0
+      warning("{get_climateIndices}: WARNING: a season was found with no wet days.")
+    }
+    else {
+      precip = sum(precipInterval$pr) / (nrow(wetDays) * nrow(precipInterval))
+    }
+    return(c(temp, precip))
+  }
+  stop("{get_climateIndices}: invalid dataType entered.")
+}
+
+get_T <- function(yr, scen, iceOut, eggMass, dataType="ADJ") {
+  val <- get_climateIndices(yr, scen, iceOut, eggMass, dataType)
+  return(val[1])
+}
+
+get_P <- function(yr, scen, iceOut, eggMass, dataType="ADJ") {
+  val <- get_climateIndices(yr, scen, iceOut, eggMass, dataType)
+  return(val[2])
+}
+
+
+# CALCULATE SURVIVORSHIP FROM INDICES
+
+get_survivorship <- function(climateIndices) {
+  # standardize temp and precip indices
+  standardizedT <- (climateIndices[1] - obsTmean) / obsTsd
+  standardizedP <- (climateIndices[2] - obsPmean) / obsPsd
+  # estimate mean respionse using logit model
+  logitS <- b0 + b1 * standardizedT + b2 * standardizedP
+  # convert back to raw probability measure
+  S <- 1 / (1 + exp(-logitS))
+  # return result
+  return(S)
+}
+```
+
+### 2.2 Create Final Dataset
+
+```{r}
+
+# For each year, save all of the predicted aspects of the breeding season
+
+final_df <- data.frame(year = integer(),
+                       scenario = character(),
+                       iceOut = integer(),
+                       eggMass = integer(),
+                       temperatureIndex = numeric(),
+                       precipitationIndex = numeric(),
+                       survivorship = numeric(),
+                       meanAprilTemp = numeric(), # also save diagnostic information:
+                       tempStart = integer(),
+                       tempEnd = integer(),
+                       precipStart = integer(),
+                       precipEnd = integer()
+                       )
+
+# setup
+years <- 2000:2100
+scenarios <- c("SSP585")
+data_type <-  "ADJ"
+# populate dataframe
+for (scen in scenarios) {
+  for (yr in years) {
+    temp_df <- tibble(year = yr,
+                      scenario = scen,
+                      tempVar1 = get_meanAprilTemp_from_EC(yr, scen, data_type),
+                      iceOut = get_iceOut_from_meanAprilTemp(tempVar1),
+                      eggMass = get_peakEggMass_from_iceOut(iceOut),
+                      temperatureIndex = get_T(yr, scen, iceOut, eggMass, data_type),
+                      precipitationIndex = get_P(yr, scen, iceOut, eggMass, data_type),
+                      survivorship = get_survivorship(c(temperatureIndex,precipitationIndex)),
+                      meanAprilTemp = tempVar1,
+                      tempStart = iceOut,
+                      tempEnd = eggMass,
+                      precipStart = eggMass - precipIntervalRadius,
+                      precipEnd = eggMass + precipIntervalRadius
+                      )
+    temp_df <- temp_df %>% select(-tempVar1)
+    final_df <- rbind(final_df, temp_df)
+  }
+}
+
+# datset output tests
+all(final_df$iceOut == iceOutEstimatesADJ)
+all(final_df$eggMass == peakEggMassEstimatesADJ)
+
+# BAT LAKE ICE OUT DATE
+
+plot(x = 2000:2100, y = final_df$iceOut, 
+     ylim = c(90, 130), type = "l", col = "navy", ylab = "Ice Out Date", xlab = "")
+lines(x = 2008:2022, y = BLISS_study_data$Ice.Out.Ordinal)
+lines(x = 2008:2022, y = rep(mean(BLISS_study_data$Ice.Out.Ordinal), 15), col = "grey")
+
+# TEMPERATURE INDEX
+
+plot(x = 2000:2100, y = final_df$temperatureIndex,
+     ylim = c(-2, 4), type = "l", col = "navy", ylab = "Temperature Index", xlab = "")
+lines(x = 2008:2022, y = BLISS_unstandardized$T.INB)
+lines(x = 2008:2022, y = rep(mean(BLISS_unstandardized$T.INB), 15), col = "grey")
+
+# PRECIPITATION INDEX
+
+plot(x = 2000:2100, y = final_df$precipitationIndex,
+     ylim = c(0, 0.6), type = "l", col = "navy", ylab = "Precipitation Index", xlab = "")
+lines(x = 2008:2022, y = BLISS_unstandardized$P.OUT, lw = 2)
+lines(x = 2008:2022, y = rep(mean(BLISS_unstandardized$P.OUT), 15), col = "grey")
+
+# SURVIVORSHIP
+
+BLISS_survivorship <- as.numeric(apply(BLISS_unstandardized[, c(2, 3)], 1, get_survivorship))
+
+plot(x = 2000:2100, y = final_df$survivorship,
+     ylim = c(0.25, 0.9), type = "l", col = "navy", ylab = "Annual Survivorship", xlab = "")
+# lines(x = 2008:2022, y = BLISS_survivorship, lw = 2)
+lines(x = 2008:2022, y = rep(mean(BLISS_survivorship), 15), col = "grey")
+lines(x = 2000:2100, y = rep(0.7242604, 101), col = "red")
+
+# write to CSV
+# write_csv(final_df, "final_data.csv")
+```
+
+# Forecasting Population
+
+## 1. Population Growth Model
+
+```{r}
+library(popbio)
+
+# DEFINING PARAMETERS
+
+age_at_maturity <- 6 # SRC: Boyle - skeletochronology
+adult_fem_abundance <- 1840 # SRC: Moldowan, estimated in 2019
+s_a <- 1 / (1 + exp(-0.9656941)) # SRC: Dylan's intercept
+f <- 1.41 # we know Patrick's estimates are underestimates, so works nicely with an overestimated p_skip
+p_skip <- 0.5
+s_m <- 0.8551498 # optimized from other parameters such that lambda = 1
+
+get_rescaled_vector <- function(some_vector, k) {
+  n_stable_fem <- some_vector[length(some_vector)]
+  factor <- k / n_stable_fem
+  return(factor * some_vector)
+}
+
+# CONSTRUCTING PROJECTION MATRIX
+
+dimension <- age_at_maturity + 1 # ages 0-1, ..., 6-7, and 7+
+model1_matrix <- matrix(0, dimension, dimension)
+model1_matrix[1, dimension] <- f*(1-p_skip)
+model1_matrix[dimension, dimension] <- s_a
+for (i in 1:(dimension - 1)) {
+  model1_matrix[i+1, i] <- s_m
+}
+
+eigen_info <- eigen.analysis(model1_matrix)
+lambda1 <- eigen_info$lambda1
+r1 <- log(lambda1)
+stable_distribution <- eigen_info$stable.stage
+stable_distribution_cal <- get_rescaled_vector(stable_distribution,
+                                               adult_fem_abundance)
+
+# SIMULATION HELPER FUNCTIONS
+
+get_variant <- function(s) {
+  result <- model1_matrix
+  result[dimension, dimension] <- s
+  return(result)
+}
+
+
+```
+
+## 2. Simulation
+
+```{r}
+
+# setup
+set.seed(416)
+years_considered <- 2000:2100
+envData <- final_df %>% filter(year %in% years_considered)
+
+# SIMULATION FUNCTION
+
+data_used <- envData
+project_population <- function(scen) {
+  # filter current scenario
+  filteredData <- data_used %>% filter(scenario == scen) %>% arrange(year)
+  # initialize pop vector
+  init_N <- stable_distribution_cal
+  # simulation setup
+  curr_N <- init_N
+  survivorships <- filteredData$survivorship
+  pop_data <- numeric(length(years_considered))
+  pop_data[1] <- curr_N[dimension]
+  #simulation
+  for (i in 1:(length(years_considered)-1)) {
+    # update matrix with adult female survival
+    curr_model_variant <- get_variant(survivorships[i])
+    # do the simulatuion as normal
+    curr_N <- curr_model_variant %*% curr_N
+    # save the number of adult females in the current population vector
+    pop_data[i+1] <- curr_N[dimension]
+  }
+  return(pop_data)
+}
+
+# PLOTTING
+
+plotting_data <- data.frame(x_axis = years_considered,
+                            y1 = project_population("SSP585"))
+
+
+plotting_data %>% ggplot(aes(x = x_axis)) +
+  geom_line(aes(y = y1, colour = "RCP 8.5")) +
+  scale_y_continuous(limits = c(0, NA)) +
+  geom_vline(xintercept = 2020, linetype = "dashed", colour = "black") +
+  theme_classic() +
+  labs(x = "Time (Year)", y = "Adult Female Abundance", colour = "Scenario")
+
+```
