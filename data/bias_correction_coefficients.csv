@@ -1,0 +1,13 @@
+Correction Factor,Value
+March mean temperature offset (°C),-1.5483352827843138
+April mean temperature offset (°C),-1.3805481600568663
+May mean temperature offset (°C),-0.5755178300579414
+March minimum temperature offset (°C),-2.9166182298785577
+April minimum temperature offset (°C),-1.903555124539867
+May minimum temperature offset (°C),-1.6615267826616258
+March dry day threshold (mm),2.114490187042752
+April dry day threshold (mm),2.16254432560776
+May dry day threshold (mm),2.579506297868085
+March intensity coefficient (unitless),4.033659742349703
+April intensity coefficient (unitless),5.973279979251971
+May intensity coefficient (unitless),6.874193852644188

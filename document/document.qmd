@@ -1,0 +1,109 @@
+---
+title: Climate Impact Analysis of Bat Lake Spotted Salamanders (*A. maculatum*)
+subtitle: A supplimentary analysis of XX
+author: Benedict Cummins-Mburu
+date: today
+format: docx
+linestretch: 1.5
+number-sections: true
+---
+
+```{r}
+#| include: false
+library(tidyverse)
+library(kableExtra)
+```
+
+
+# Introduction
+
+
+
+
+
+
+
+# Statistical Bias Corrections
+
+We applied two statistical bias correction methods to raw, daily GCM output. For temperature forecasts (both the daily mean and the daily minimum), we applied additive linear scaling as described in Hempel et al. (2013). For precipitation forecasts (total daily), we applied local intensity scaling as described in Smitha et al. (2018). Both methods were chosen to correct specific systematic biases (i.e. deviance from an expected average) identified when we compared historical GCM output to real climatic measurements taken from Algonquin East Gate Climate Station’s historical records over a 20-year period (from 2005 to 2024). Further, both methods assume stationarity of bias: the idea that systematic bias in the past will manifest itself in the same way in the future. Finally, both methods fit correction coefficients to historical data from the SSP 3 climate scenario specifically, which are applied to all three scenarios (correction coefficients fit using other scenarios were very similar, since the three scenarios differed little from 2005 to 2024).
+
+## Additive Linear Scaling
+
+For both mean and minimum daily temperature, simulated data showed similar trends to observed data over time, but with consistently higher averages (Figure 1). Simulated temperatures also exhibited smaller day-to-day variance compared to observed trends, likely because we used ensemble means, which artificially deflates the variance. Methods that correct the variance and the mean in simulated temperature data simultaneously exist, but have been shown to impact the climate change signal in certain datasets (Hagemann et al., 2011). Given how temperature projections are used in our main analysis, we opted to only correct the systematic bias in the average, preserving the climate change signal most faithfully. The method used, additive linear scaling, is described below.
+
+Let $i$ represent the March of a given year between 2005 and 2024. Then, let $T_{ij}^{\text{OBS}}$ represent the observed temperature (mean or minimum) of the $j^{\text{th}}$ day in that month respectively. $T_{ij}^{\text{SIM}}$ and $T_{ij}^{\text{ADJ}}$ are defined similarly, for simulated (SIM) and bias-corrected (ADJ) daily values. We calculate the linear scaling constant $C$ as follows:
+
+$$
+    C = \left(\sum_{i=2005}^{2024}{T_i^{OBS} - T_i^{SIM}}\right) / \space 20
+$$
+
+where $T_i^{\text{OBS}}$ and $T_i^{\text{SIM}}$ represent the average temperature of the i^{\text{th}} March from 2005 to 2024, for observed and simulated data respectively. $C$ can then be used to additively scale daily simulated temperatures like so:
+
+$$
+    T_{i,j}^{ADJ} = C + T_{i,j}^{SIM}
+$$
+
+Notice that $C$ is calculated over the entire period, and not per-year. This allows us to apply the correction shown in Equation 1.2 to every March in the forecasted simulated data. This procedure can then be repeated for April and May, mean and minimum temperatures separately, resulting in the estimation of 6 linear scaling constants to correct GCM-derived temperature forecasts.
+
+## Local Intensity Scaling
+
+For daily total precipitation, simulated data had similar monthly and seasonal averages as observed data, but grossly underestimated the day-to-day variance in precipitation, effectively predicting a drizzle each day. This resulted in an underestimated number of rainy days, and an underestimated intensity of wet days. Since the precipitation main effect used in our analysis is sensitive to the number of rainy days (see main text),  this drizzle bias required correction. The method used, local intensity scaling, is described below. 
+
+Let $i$ represent the March of a given year between 2005 and 2024. Then, let $P_{ij}^{\text{OBS}}$ represent the observed precipitation (total) on the $j^{\text{th}}$ day in that month respectively. $P_{ij}^{\text{SIM}}$ and $P_{ij}^{\text{ADJ}}$ are defined similarly, for simulated (SIM) and bias-corrected (ADJ) daily values. First, a fixed threshold $t$ is determined such that the average number of wet days with simulated precipitation totals below $t$ is equal to the average number of observed dry days. This constant is used to correct for the number of dry days in the simulated data. Then, we calculate the observed average precipitation among wet days ($D_1$), and the average precipitation among simulated days above $t$ ($D_2$). Their ratio, $D=\frac{D_1}{D_2}$, is used to correct for the expected intensity of wet days in the simulated data. These constants are then applied to the simulated precipitation data as follows:
+
+$$
+P_{i,j}^{ADJ} =\begin{cases}0, & \text{if } P_{i,j}^{SIM} < t \\
+\left(P_{i,j}^{SIM} - t\right) \times D, & \text{otherwise}\end{cases}
+$$
+
+Similarly to temperature, three sets of $(D,t)$ pairs were fit, for each month in our dataset. 
+
+## Bias Correction Results & Diagnostics
+
+All fitted correction factors are shown in @tbl-1. Monthly biases in simulated temperatures were more extreme earlier in the season, and for minimum temperatures. Simulated precipitation days were deemed dry when their total precipitation did not exceed around 2mm, representing a light shower. Simulated wet days saw their total precipitation amount inflated by a factor of 4 to 7, more intense later in the season. Figures 1.1, 2.1, and 3.1 illustrate the effect of the correction procedures compared to observed data, for each climate variable. 
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: tbl-1
+#| tbl-cap: "Fitted correction factors applied to simulated climate projections"
+Table_1 <- read_csv(here::here("data/bias_correction_coefficients.csv")) %>%
+    mutate(Value = round(Value, 5))
+kable(Table_1)
+```
+
+# Visually Validating Environmental Index Forecasts
+
+Bias-corrected climate variables were used to forecast the following annual variables:
+- Breeding season start date (from which the breeding season end date was deterministically derived)
+- Inbound temperature index (see definition in main text)
+- Outbound precipitation index (see definition in main text)
+
+Here we present our forecasted indices, for the period from 2008 (start of the BLISS project) to 2100 (end of available GCM estimates). Three forecasts were made in each case, one for each of the three climate scenarios considered. Shown concurrently are the observed indices, available during the BLISS project study period (2008 to 2022). These are shown in Figures 2.1, 2.2, and 2.3. In each case, the simulated projection is similar to the mean of the observed index during the BLISS study period. However, the true year-to-year variance in these indices was always larger than what was produced from the GCM data, apart from forecasted precipitation indices, which matched observed variance quite closely.
+
+# Population Growth Model Specification
+
+We used a modified age-structured population growth model to forecast the female Bat Lake spotted salamander population through time. Let $N_t$ be a vector of length seven representing the population of salamanders, binned into age groups, in year $t$. Then, the population in the following year ($N_{t+1}$) is calculated as follows:
+
+[Equation]
+
+Population growth in our model is governed primarily by the annual adult female survivorship term $S_a\left(t\right)$, which varies from year to year according to those environmental characteristics which correlated with survivorship in the CJS survivorship model fit in the main paper. We write:
+
+[Equation]
+
+where $\text{Temp}_{t,j}$ and $\text{Precip}_{t,j}$ are the standardized temperature and precipitation indices (see main text for full definitions) of Bat Lake in the year $t$ and climate scenario $j$. $\beta_i$ are the fitted coefficients from the CJS survivorship model. $S_a\left(t\right)$ estimates for every scenario for each year from 2000 to 2100 are shown visually in Figure 3.1.
+
+Population growth also depends on three other life-history parameters which were held constant over time. $S_m$ denotes the subadult (i.e. metamorph) annual survivorship, which is shared between all subadult age classes, $p$ denotes the probability that a mature female skips reproduction in a year, and $f$ denotes the average number of offspring which survive until the next year produced by a reproducing female. Reproductive skipping is a well-documented component of yellow spotted salamander life-history. All parameter estimates are reported in Table 3.1. While skipping and fecundity estimates could be found in the literature, subadult survivorship could not. As such, the parameter was numerically optimized such that the resulting model had a finite rate of increase $\lambda$ near 1, when $S_a\left(t\right)=\text{logit}^{-1}(\beta_0) \approx 0.72$ (i.e., adult female survivorship assuming study-average temperature and precipitation indices). We thought this decision sensible since the population did not show signs of increase or decrease during the BLISS study period (2008 to 2024). This baseline survivorship was also used to derive the stable-age distribution of the population, using the `eigen.analysis` function from the `popbio` package in R. Projections were initialized in the year 2019 at the base model’s stable age distribution with 1840 starting adult females.
+
+We tested the robustness of our population projections by varying the following elements of our model and comparing the output with the base run:
+- Different combinations of the non-focal parameters $p$, $f$ (optimizing $S_m$ such that $\lambda$ is near 1 in each case).
+- Earlier starting year (checked from 2000 to 2025).
+
+The results of these robustness tests are displayed in Figures 3.2 and Figure 3.3 respectively, and show that our projections are not sensitive to changes in either case. On top of these computational verifications, we know mathematically that varying the absolute starting abundance does not change the relative model dynamics at all.
+
+
+
+
+
+
