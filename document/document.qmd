@@ -10,14 +10,14 @@ number-sections: true
 bibliography: references.bib
 ---
 
-<!-- TALK WITH DYLAN:
-        - What can definitely be kept are the survivorship forecasts.
-        - The most conservative approach to solving this issue is to do what Doug said: show how survivorship changes accross the three scenarios, but not population. The paper is about survivorship after all. 
-        - There were some wording comments that I don't necessarily agree with. For instance, "simulations" can definitely be deterministic. But I should for sure specify that it's deterministic.
-        - Regardless of what we do, the Discussion relies too heavily on the population forecasts. 
-        - I think the population projection has value in the sense that we are showing how these two effects operate together marginally. We can also argue that while other parameters might change with the climate, conventional elasticity analyses recognize that adult survivorship effects are by far the main drivers. Doug is very right to be VORTEX-wary. 
-        - The core assumtion of the population model is that base growth is lambda = 1.
+<!-- Questions for Dylan:
         - Just for fun, do you have an R^2 value for the fitted Bayesian model? How much variance is explained by just the two climate variables?
+-->
+
+<!-- Chat with Doug:
+        - I have altered it to de-emphasize the population model. 
+        - Model is a matrix for the structural incorporation of lag, and no other reason. Lag is obviously important in a long-lived species.
+        - I disagree that there should be the matrix in my Methods section. It's not the main thing, and lowkey misleading.
 -->
 
 ```{r}
@@ -38,46 +38,37 @@ AEG_historic <- read_csv(here::here("data/climate_data/clean_data/AEG_historic_c
 
 # Abstract (from pre-print)
 
+<!-- Staging -->
 Temperate regions experience pronounced interannual climatic variability, providing the opportunity to understand the drivers of temporal variation in survival, and to model future impacts of environmental change. Temperate amphibians are sensitive to climatic variation and are experiencing dramatic declines in range size and abundance under global environmental change. We developed a priori hypotheses for climate effects on amphibian survival, then combine fifteen years of mark-recapture data from a population of spotted salamanders (*Ambystoma maculatum*) with Bayesian hierarchical modelling to test the association between environmental variables and annual survival. We found that greater temperatures during the spring inbound breeding migration led to a 50% decline in annual survival, while greater precipitation during the outbound migration was associated with a survival increase of 30%. Evaporative water loss may be the major driver of survival variation during the spring migration.
 
-We then projected population abundance under three climate change scenarios, incorporating the environmental effects on annual survivorship that were discovered. In the milest scenario, projected increases in spring precipitation were able to compensate for their warmer temperatures, resulting in an approximately stable population size. Faced with more extreme future climates, the population declines to over half of its initial size. Our study draws urgent attention to the migratory dynamics of temperate, spring breeding amphibians faced with a changing climate.
+<!-- My Section; TODO: Finish writing  this second section of the Abstract when figured out how to reword Results -->
+We then projected estimates of adult female survival to the year 2100 under three climate change scenarios while incorporating the estimated effects of environmental variables on adult survival and assuming that assuming that other population parameters would be unchanged. In the milest scenario, the projected increase in spring precipitation were able to compensate for their warmer temperatures, resulting in an approximately stable population size. Faced with more extreme future climates, the population declines to over half of its initial size. Our study draws urgent attention to the migratory dynamics of temperate, spring breeding amphibians faced with a changing climate.
 
-# Methods: Survivorship Projections under Climate Change (from pre-print)
+# Methods: Projecting Survivorship & Abundance under Climate Change (from pre-print)
 
 <!-- Overview -->
-We projected estimates of annual survivorship for the Bat Lake Spotted Salamander population through the remainder of the $\mathrm{21}^\mathrm{st}$ century, under three different climate scenarios.   
-
-<!-- TODO: Also, in the Results of the bias correction, quantify the average bias reduction per year-month pair that the bias-corrected data offers. --> 
-
-
-<!-- TODO: The overview may need to be reworded if we change the focus to survivial. -->
-
-
-<!-- Overview of Method -->
-We projected the abundance of the Bat Lake spotted salamander population through the remainder of the 21st century, under three different climate scenarios. First, we forecasted the inbound temperature and outbound precipitation covariates from the breeding migration model using climate data from global circulation models (GCMs). Using the fitted model, these forecasts were used to estimate future adult female survivorship values. Finally, these were embedded into a population growth model to project the population’s abundance though time. Our pipeline is summarized in @fig-pipeline.
-
-```{r}
-#| warning: false
-#| message: false
-#| echo: false
-#| out-width: 80%
-#| label: fig-pipeline
-#| fig-cap: "Schematic representation of the climate impact analysis. Vector quantities are bolded. Theta represents constant life-history parameters, derived from literature."
-knitr::include_graphics(here::here("document/pipeline.png"))
-```
+We paired results from the posthoc breeding migration model with climate forecasting data to project estimates of annual survivorship for the Bat Lake Spotted Salamander population through the remainder of the $\mathrm{21}^\mathrm{st}$ century. First, we forecast the inbound temperature and outbound precipitation covariates from the breeding migration model using climate data from global circulation models (GCMs), under three climate scenarios. These forecasts were then used to estimate future adult female annual survival probabilities. These survivorship estimates were also embedded into a matrix model to project the potential impacts of these changing climatic indices on abundance, in the absence of other effects.
 
 <!-- Downloading climate data -->
-Estimates of mean temperature, minimum temperature and total precipitation were required for each day between March–May for the years 2005–2100 to correctly calculate the migration model’s environmental covariates. These data were sourced from the Coupled Model Intercomparison Project Phase 6 (CMIP6) dataset, which provides daily weather predictions that have been statistically downscaled to spatial resolutions of 10 $\text{km}^2$ [@eyring_CMIP6_2016]. We used the closest available grid point to the Algonquin East Gate Climate Station (45° 32' N, 78° 17' W), approximately 2.2 $\text{km}$ away. For each climate variable the ensemble mean of the 26 available GCMs was used. Three such datasets were compiled, one for each of three Shared Socio-economic Pathways (SSPs) representing conservative (SSP1), moderate (SSP2) and extreme (SSP5) fossil-fueled development respectively [@riahi_scenarios_2017].
+Estimates of mean temperature, minimum temperature and total precipitation were required for each day between March–May for the years 2005–2100 to calculate the migration model’s environmental covariates. These data were sourced from the Coupled Model Intercomparison Project Phase 6 (CMIP6) dataset, which provides daily weather predictions that have been statistically downscaled to spatial resolutions of 10 $\text{km}^2$ [@eyring_CMIP6_2016]. We used the closest available grid point to the Algonquin East Gate Climate Station (45° 32' N, 78° 17' W), approximately 2.2 $\text{km}$ away. For each climate variable, the ensemble mean of the 26 available GCMs was used. Three such datasets were compiled, one for each of three Shared Socio-economic Pathways (SSPs) representing conservative (SSP1), moderate (SSP2) and extreme (SSP5) fossil-fueled development respectively [@riahi_scenarios_2017].
 
 <!-- Correcting climate data -->
 We applied two statistical bias corrections to the GCM data, in accordance with standard practice for climate impact analysis
 [@sharma_BC_2007; @hagemann_BC_2011]. For mean and minimum temperature, additive linear scaling was used to correct for long-run bias in mean and minimum temperature data, following the procedure described in @hempel_tas_2013. For total precipitation, local intensity scaling was used to correct the intensity and frequency of rainy days, applied as described in @smitha_pr_2018. These procedures were applied to the GCM data over a 20-year period (2005-2024) where their results could be directly compared to the Algonquin East Gate Climate Station’s historical records. Once suitable correction factors had been identified, these corrections were applied to future GCM data (see [Appendix -@sec-appendix-bc] for explicit correction equations and a visual comparison of raw versus bias-corrected simulated data).
 
 <!-- Predicting breeding season information -->
-Once bias-corrected, GCM data was used to predict the salamander breeding season start and end dates, enabling the calculation of the specific environmental covariates used in the CJS model, for each year through to 2100. For a given year, the breeding season start date was estimated using that year’s mean April temperature (leveraging its strong, negative correlation with Bat Lake ice out date; [Appendix -@sec-appendix-survival]), and was set to end 22 days later, corresponding to the average breeding season length observed during the BLISS study period. These results were validated by comparing hindcasted and observed environmental indices over our 2008-2022 study period ([Appendix -@sec-appendix-survival]). Using this time interval, annual survivorship was estimated using the breeding migration model covariates for inbound temperature and outbound precipitation. This process was repeated for each of the three SSPs, and results were validated by comparing hindcasted and observed environmental indices over the 2008-2022 BLISS study period ([Appendix -@sec-appendix-survival]).
+Once bias-corrected, GCM data was used to predict the salamander breeding season start and end dates, enabling the calculation of the specific environmental covariates used in the CJS model, for each year through to 2100. For a given year, the breeding season start date was estimated using that year’s mean April temperature (leveraging its strong, negative correlation with Bat Lake ice out date; [Appendix -@sec-appendix-survival]), and was set to end 22 days later, corresponding to the average breeding season length observed during the BLISS study period. Estimated intervals were validated by comparing hindcasted and observed environmental indices over our 2008-2022 study period ([Appendix -@sec-appendix-survival]). Using these indices, annual survivorship estimates were calculated for each year from 2005 to 2100 using the breeding migration model. This process was repeated for each of the three climate scenarios. Estimated survival probabilities were validated by comparing hindcasted estimates and fitted estimates based on observed data from 2008 to 2022 ([Appendix -@sec-appendix-survival]).
 
 <!-- Forecasting -->
-Finally, we used values of predicted adult survivorship from our breeding migration model within a population growth model to estimate long-term population trajectories under the different climate scenarios. Our population model is an age-structured “Leslie” matrix model, modified so that the final class represented all reproductively mature adults [@smith_leslie_1994]. We chose this model over a simpler one to account for the time lag between changes in adult survivorship and their effects on future adult recruitment. Since female spotted salamanders mature at around 6 years old (Boyle, 2012), this resulted in a seven-staged discrete growth model. We sourced mature fecundity estimates for the Bat Lake population from @moldowan_spotted_2023. As adequate estimates of annual juvenile survivorship could not be determined, they were set such that the resulting model had a finite rate of increase of 1 [@congdon_snapping_1994]. The output of the fitted CJS model evaluated at the average values of all significant environmental variables (i.e. the model intercept) was used as the baseline mature survivorship (see [Appendix -@sec-appendix-forecast] for full model parameterization). Simulations were initialized in the year 2019 at the base model’s stable age distribution with 1840 starting adult females. Simulations initialized at different initial abundances and starting years had qualitatively similar long-term trajectories ([Appendix -@sec-appendix-forecast]). 
+Finally, we used these estimated survival probabilities within a simple matrix model to project long-term population trajectories under different future climate scenarios, and in the absence of climate-driven effects on other population vital rates. Our chosen population model is a deterministic, female-only, age-structured matrix model where the final class represents all reproductively mature adults [@smith_leslie_1994]. We chose this model over a simpler one to account for the time lag between changes in adult survivorship and their effects on future adult recruitment. Since female spotted salamanders mature at around 6 years old (Boyle, 2012), this resulted in a seven-staged discrete growth model. We sourced fecundity estimates (i.e. the number of year-old females per adult female alive in the previous year) for the Bat Lake population from @moldowan_spotted_2023. As annual juvenile survivorship from ages 1 to 6 was unknown, these values were set such that the resulting model had a finite rate of increase ($\lambda$) of 1 under baseline conditions [@congdon_snapping_1994]. We considered the baseline conditions to be the  average values of the observed environmental indices over the BLISS study period (see [Appendix -@sec-appendix-forecast] for model parameterization). Projections were initialized in the year 2019 at the base model’s stable age distribution with 1840 adult females. We tested the sensitivity of our projections to changes in initial abundance, starting year, and all non-focal vital rates (fecundity, juvenile survival, age of maturity, holding $\lambda = 1$) in, finding that such variables had little effect on our results, within a reasonable searching range [Appendix -@sec-appendix-forecast].
+
+<!-- TODO: in suppliment, combine p and f together, just call it f. -->
+
+# Results: Projecting Survivorship & Abundance under Climate Change (from pre-print)
+
+<!-- TODO: refactor to first talk about the survivorship trajectories (these should be plotted), and THEN about the resulting demographic predictions. -->
+
+
 
 <!-------------------------------------------------------------------------------------------------------------------->
 
@@ -115,12 +106,9 @@ BC_diagnostics <- ECCC_projections_BC %>%
 # shared plotting constants for the diagnostic figures below
 plot_colours <- c(
     "Observed" = "black",
-    "Observed (smoothed)" = "grey",
     "Simulated" = "navyblue",
     "Bias-corrected" = "forestgreen"
 )
-diagnostic_breaks <- c("Observed", "Simulated", "Bias-corrected")
-
 diagnostic_theme <- theme_classic() +
     theme(
         legend.position = "top",
@@ -131,11 +119,11 @@ diagnostic_theme <- theme_classic() +
         plot.title = element_text(face = "bold", size = rel(0.9))
     )
 
-# both panels of the temperature diagnostics illustrate the same single year
-DIAGNOSTIC_YEAR <- 2008
+# all panels of the BC diagnostics illustrate the same single year
+DIAGNOSTIC_YEAR <- 2010
 ```
 
-The daily projections of mean temperature, minimum temperature, and total precipitation used in this study (hereafter referred to as "climate projections") were sourced originally from the Coupled Model Intercomparison Project Phase 6 (CMIP6) dataset, which provides daily estimates of these climate variables under various socio-political scenarios (called "Shared Socioeconomic Pathways", often abbreviated as SSPs). Since GCM output is coarse-grained, *Environment and Climate Change Canada* provides downscaled estimates with higher spatial resolution [10 $\text{km}^2$; @eyring_CMIP6_2016], for each of three SSPs (SSP1, SSP2, and SSP5 ; see [@riahi_scenarios_2017] for detailed definitions). These are more appropriate for the analysis of highly localized populations such as the Bat Lake spotted salamander population. Even with downscaling, however, climate projections are often still systematically biased [@sharma_BC_2007; @hagemann_BC_2011]; while overall trends are often quite accurate, projected estimates may deviate substantially from observations in their absolute values and/or interannual variations.
+The daily projections of mean temperature, minimum temperature, and total precipitation used in this study (hereafter referred to as "climate projections") were sourced originally from the Coupled Model Intercomparison Project Phase 6 (CMIP6) dataset, which provides daily estimates of these climate variables under various socio-political scenarios (called "Shared Socioeconomic Pathways", often abbreviated as SSPs). Since GCM output is coarse-grained, Environment and Climate Change Canada provides downscaled estimates with higher spatial resolution [10 $\text{km}^2$; @eyring_CMIP6_2016], for each of three SSPs (SSP1, SSP2, and SSP5 ; see [@riahi_scenarios_2017] for detailed definitions). These are more appropriate for the analysis of highly localized populations such as the Bat Lake spotted salamander population. Even with downscaling, however, climate projections are often still systematically biased [@sharma_BC_2007; @hagemann_BC_2011]; while observed trends are often accurately reproduced, estimates may deviate substantially from observations in their absolute values and/or interannual variations.
 
 We implemented two bias correction methods to correct specific, systematic deviations between observed and simulated climate metrics. In both cases, these methods were first applied over a historical period (2005 to 2024) where observed daily climate data was available near our study site (measurements taken from Algonquin East Gate Climate Station), to determine suitable correction factors. Then, these correction factors were applied to correct bias in future projections (through to 2100), under the assumption that systematic bias in the past will manifest itself in the same way in the future. We note here that projections from all three SSPs considered were corrected using the same coefficients. 
 
@@ -172,240 +160,99 @@ Similarly to temperature, three sets of $(D,t)$ pairs were fit, for each month i
 
 ## Bias Correction Results & Diagnostics
 
-All fitted correction factors are shown in @tbl-1. Monthly biases in simulated temperatures were more extreme earlier in the season, and for minimum temperatures. Simulated precipitation days were deemed dry when their total precipitation did not exceed around 2mm, equivalent to a light shower. Simulated wet days saw their total precipitation amount inflated by a factor of 4 to 7, more intense later in the season.
+All fitted correction factors are shown in @tbl-correction-factors. Monthly biases in simulated temperatures were more extreme earlier in the season, and for minimum vs. average daily temperature estimastes. Simulated precipitation days were deemed dry when their total precipitation did not exceed around 2mm, equivalent to a light shower. Simulated wet days saw their total precipitation amount inflated by a factor of 4 to 7. By construction, the biases we targeted for each climate variable were completely removed when values are averaged over the entire period. However, we also found that, for any specific month in the historical data, raw GCM data was more likely to deviate from observed estimates than bias-corrected GCM data.
 
-@fig-tas-BC-diagnostics and @fig-tasmin-BC-diagnostics compare observed, simulated, and bias corrected daily temperature estimates for an arbitrarily chosen year in the historical period (2008). Since all bias correction coefficients are negative, the simulated trend is pulled downwards, which happens in all years. Over the entire period, this completely removes monthly bias in temperature metrics (i.e. averaged from 2005 to 2024, bias-corrected climate metrics are as likely to over-estimate the true trend as they are to under-estimate it). @fig-pr-BC-diagnostics makes similar comparisons but for precipitation,  
+@fig-BC-diagnostics compares observed, simulated, and bias corrected daily weather estimates for an arbitrarily chosen year in the historical period (2010). This is shown to illustrate how the correction algorithms modify the simulated data; the effects were qualitaitvely similar for any chosen year within the historical period (2005 to 2024). Since all temperature bias correction coefficients are negative, the simulated trend is pulled downwards. For precipitation, days receiving under ~2mm of precipitation are deemed dry, and wet days see their precipitation estimates inflated, creating daily variability that is similar to the observed trend. 
 
 ```{r}
 #| warning: false
 #| message: false
 #| echo: false
-#| label: tbl-1
-#| tbl-cap: "Fitted correction factors applied to simulated climate projections"
+#| label: tbl-correction-factors
+#| tbl-cap: "Fitted correction factors applied to simulated climate projections."
 Table_1 <- read_csv(here::here("data/bias_correction_coefficients.csv")) %>%
     mutate(Value = round(Value, 5))
-kable(Table_1)
+half <- nrow(Table_1) / 2 # first half is temperature, second half is precipitation
+kable(
+    cbind(Table_1[1:half, ], Table_1[(half + 1):nrow(Table_1), ]),
+    col.names = rep(c("Correction Factor", "Value"), 2),
+    booktabs = TRUE
+) %>%
+    kable_styling(font_size = 9)
 ```
 
 ```{r}
 #| warning: false
 #| message: false
 #| echo: false
-#| label: fig-tas-BC-diagnostics
-#| fig-cap: "(A) Time series of observed (black), simulated (blue), and bias-adjusted (green) mean daily temperatures during the spring of 2019 (year chosen arbitrarily, for illustrative purposes). (B) Deviation of simulated (blue) and bias-adjusted (green) estimates from observed monthly mean temperature, for the same year shown in panel A. Monthly means are taken over the days on which temperature was actually observed."
-#| fig-height: 4
-#| fig-width: 8
+#| label: fig-BC-diagnostics
+#| fig-cap: "Time series of observed (black), simulated (blue), and bias-corrected (green) daily weather estimates from March 1 to May 31, 2010. Panel A displays mean daily temperature, panel B displays minimum daily temperature, and panel C displays total daily precipitation."
+#| fig-height: 7
+#| fig-width: 6
 
-Fig_A_data <- BC_diagnostics %>%
+# prepare data
+Fig_data <- BC_diagnostics %>%
     filter(year == DIAGNOSTIC_YEAR)
+startDayOrdinal <- min(Fig_data$ordinalDay)
+Fig_data <- Fig_data %>%
+    mutate(displayDay = ordinalDay - startDayOrdinal)
 
-Fig_B_data <- BC_diagnostics %>%
-    filter(year == DIAGNOSTIC_YEAR) %>%
-    group_by(month) %>%
-    summarise(
-        obs_avg = mean(tas_OBS[!is.na(tas_OBS)]),
-        sim_avg = mean(tas[!is.na(tas_OBS)]),
-        BC_avg = mean(tasBC[!is.na(tas_OBS)]),
-        .groups = "drop"
-    ) %>%
-    mutate(
-        Simulated = sim_avg - obs_avg,
-        `Bias-corrected` = BC_avg - obs_avg
-    ) %>%
-    pivot_longer(
-        cols = c(Simulated, `Bias-corrected`),
-        names_to = "series",
-        values_to = "mean_deviation"
-    ) %>%
-    mutate(
-        month = factor(month, levels = c("Mar", "Apr", "May")),
-        series = factor(series, levels = c("Simulated", "Bias-corrected"))
-    )
-
-Fig_A <- ggplot(Fig_A_data, aes(x = ordinalDay, group = year)) +
+# panel A: tas
+Panel_A <- Fig_data %>% ggplot(aes(x = displayDay)) +
     geom_line(aes(y = tas_OBS, colour = "Observed"), linewidth = 0.25) +
     geom_line(aes(y = tas, colour = "Simulated"), linewidth = 0.4) +
     geom_line(aes(y = tasBC, colour = "Bias-corrected"), linewidth = 0.4) +
     scale_colour_manual(
         name = NULL,
-        values = plot_colours,
-        breaks = diagnostic_breaks
+        values = plot_colours
     ) +
     coord_cartesian(ylim = c(-20, 25)) +
     labs(
-        title = "A. Mean Daily Temperatures (Spring, 2019)",
-        x = "Time (Ordinal Days)",
+        title = "A. Daily Mean Temperature Trend in Spring of 2010",
+        x = "Time (Days Since March 1, 2010)",
         y = "Mean Daily Temperature (°C)"
     ) +
     diagnostic_theme
 
-Fig_B <- ggplot(Fig_B_data, aes(x = month, y = mean_deviation, fill = series)) +
-    geom_col(position = position_dodge(width = 0.8), width = 0.7) +
-    geom_hline(yintercept = 0, linewidth = 0.3, colour = "black") +
-    scale_fill_manual(
-        name = NULL,
-        values = plot_colours,
-        breaks = c("Simulated", "Bias-corrected")
-    ) +
-    labs(
-        title = "B. Monthly Bias (Spring, 2019)",
-        x = "Month",
-        y = "Mean Deviation from Observed (°C)"
-    ) +
-    diagnostic_theme +
-    theme(legend.position = "none")
-
-(Fig_A | Fig_B) +
-    plot_layout(widths = c(1.6, 1), guides = "collect") +
-    plot_annotation(theme = theme(legend.position = "top"))
-```
-
-```{r}
-#| warning: false
-#| message: false
-#| echo: false
-#| label: fig-tasmin-BC-diagnostics
-#| fig-cap: "(A) Time series of observed (black), simulated (blue), and bias-adjusted (green) minimum daily temperatures during the spring of 2019 (year chosen arbitrarily, for illustrative purposes). (B) Deviation of simulated (blue) and bias-adjusted (green) estimates from observed monthly minimum temperature, for the same year shown in panel A. Monthly means are taken over the days on which temperature was actually observed."
-#| fig-height: 4
-#| fig-width: 8
-
-Fig_A_data <- BC_diagnostics %>%
-    filter(year == DIAGNOSTIC_YEAR)
-
-Fig_B_data <- BC_diagnostics %>%
-    filter(year == DIAGNOSTIC_YEAR) %>%
-    group_by(month) %>%
-    summarise(
-        obs_avg = mean(tasmin_OBS[!is.na(tasmin_OBS)]),
-        sim_avg = mean(tasmin[!is.na(tasmin_OBS)]),
-        BC_avg = mean(tasminBC[!is.na(tasmin_OBS)]),
-        .groups = "drop"
-    ) %>%
-    mutate(
-        Simulated = sim_avg - obs_avg,
-        `Bias-corrected` = BC_avg - obs_avg
-    ) %>%
-    pivot_longer(
-        cols = c(Simulated, `Bias-corrected`),
-        names_to = "series",
-        values_to = "mean_deviation"
-    ) %>%
-    mutate(
-        month = factor(month, levels = c("Mar", "Apr", "May")),
-        series = factor(series, levels = c("Simulated", "Bias-corrected"))
-    )
-
-Fig_A <- ggplot(Fig_A_data, aes(x = ordinalDay, group = year)) +
+# panel B: tasmin
+Panel_B <- Fig_data %>% ggplot(aes(x = displayDay)) +
     geom_line(aes(y = tasmin_OBS, colour = "Observed"), linewidth = 0.25) +
     geom_line(aes(y = tasmin, colour = "Simulated"), linewidth = 0.4) +
     geom_line(aes(y = tasminBC, colour = "Bias-corrected"), linewidth = 0.4) +
     scale_colour_manual(
         name = NULL,
-        values = plot_colours,
-        breaks = diagnostic_breaks
+        values = plot_colours
     ) +
-    coord_cartesian(ylim = c(-30, 25)) +
+    coord_cartesian(ylim = c(-20, 25)) +
     labs(
-        title = "A. Min Daily Temperatures (Spring, 2019)",
-        x = "Time (Ordinal Days)",
-        y = "Min Daily Temperature (°C)"
+        title = "B. Daily Minimum Temperature Trend in Spring of 2010",
+        x = "Time (Days Since March 1, 2010)",
+        y = "Minimum Daily Temperature (°C)"
     ) +
     diagnostic_theme
 
-Fig_B <- ggplot(Fig_B_data, aes(x = month, y = mean_deviation, fill = series)) +
-    geom_col(position = position_dodge(width = 0.8), width = 0.7) +
-    geom_hline(yintercept = 0, linewidth = 0.3, colour = "black") +
-    scale_fill_manual(
-        name = NULL,
-        values = plot_colours,
-        breaks = c("Simulated", "Bias-corrected")
-    ) +
-    labs(
-        title = "B. Monthly Bias (Spring, 2019)",
-        x = "Month",
-        y = "Mean Deviation from Observed (°C)"
-    ) +
-    diagnostic_theme +
-    theme(legend.position = "none")
-
-(Fig_A | Fig_B) +
-    plot_layout(widths = c(1.6, 1), guides = "collect") +
-    plot_annotation(theme = theme(legend.position = "top"))
-```
-
-```{r}
-#| warning: false
-#| message: false
-#| echo: false
-#| label: fig-pr-BC-diagnostics
-#| fig-cap: "(A) Time series of observed (black), simulated (blue), and bias-adjusted (green) minimum daily temperatures during the spring of 2019 (year chosen arbitrarily, for illustrative purposes). (B) Deviation of simulated (blue) and bias-adjusted (green) estimates from observed monthly minimum temperature, for the same year shown in panel A. Monthly means are taken over the days on which temperature was actually observed."
-#| fig-height: 4
-#| fig-width: 8
-
-Fig_A_data <- BC_diagnostics %>%
-    filter(year == DIAGNOSTIC_YEAR)
-
-Fig_B_data <- BC_diagnostics %>%
-    filter(year == DIAGNOSTIC_YEAR) %>%
-    group_by(month) %>%
-    summarise(
-        obs_avg = mean(pr_OBS[!is.na(pr_OBS)]),
-        sim_avg = mean(pr[!is.na(pr_OBS)]),
-        BC_avg = mean(prBC[!is.na(pr_OBS)]),
-        .groups = "drop"
-    ) %>%
-    mutate(
-        Simulated = sim_avg - obs_avg,
-        `Bias-corrected` = BC_avg - obs_avg
-    ) %>%
-    pivot_longer(
-        cols = c(Simulated, `Bias-corrected`),
-        names_to = "series",
-        values_to = "mean_deviation"
-    ) %>%
-    mutate(
-        month = factor(month, levels = c("Mar", "Apr", "May")),
-        series = factor(series, levels = c("Simulated", "Bias-corrected"))
-    )
-
-Fig_A <- ggplot(Fig_A_data, aes(x = ordinalDay, group = year)) +
+# panel C: pr
+Panel_C <- Fig_data %>% ggplot(aes(x = displayDay)) +
     geom_line(aes(y = pr_OBS, colour = "Observed"), linewidth = 0.25) +
     geom_line(aes(y = pr, colour = "Simulated"), linewidth = 0.4) +
     geom_line(aes(y = prBC, colour = "Bias-corrected"), linewidth = 0.4) +
     scale_colour_manual(
         name = NULL,
-        values = plot_colours,
-        breaks = diagnostic_breaks
+        values = plot_colours
     ) +
     coord_cartesian(ylim = c(0, 25)) +
     labs(
-        title = "A. Min Daily Temperatures (Spring, 2019)",
-        x = "Time (Ordinal Days)",
-        y = "Min Daily Temperature (°C)"
+        title = "C. Daily Precipitation Trend in Spring of 2010",
+        x = "Time (Days Since March 1, 2010)",
+        y = " Total Daily Precipitation (mm)"
     ) +
     diagnostic_theme
 
-Fig_B <- ggplot(Fig_B_data, aes(x = month, y = mean_deviation, fill = series)) +
-    geom_col(position = position_dodge(width = 0.8), width = 0.7) +
-    geom_hline(yintercept = 0, linewidth = 0.3, colour = "black") +
-    scale_fill_manual(
-        name = NULL,
-        values = plot_colours,
-        breaks = c("Simulated", "Bias-corrected")
-    ) +
-    labs(
-        title = "B. Monthly Bias (Spring, 2019)",
-        x = "Month",
-        y = "Mean Deviation from Observed (°C)"
-    ) +
-    diagnostic_theme +
-    theme(legend.position = "none")
-
-(Fig_A | Fig_B) +
+# combine
+(Panel_A / Panel_B / Panel_C) +
     plot_layout(widths = c(1.6, 1), guides = "collect") +
     plot_annotation(theme = theme(legend.position = "top"))
 ```
-
 
 # Visually Validating Environmental Index Forecasts {#sec-appendix-survival}
 
