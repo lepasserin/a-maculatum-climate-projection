@@ -1,0 +1,27 @@
+# ── R ─────────────────────────────────────────────
+.Rhistory
+.Rapp.history
+.RData
+.Rdata
+.Ruserdata
+.Rproj.user/
+*.Rproj.user
+.Renviron
+.Rprofile.local
+
+*.tar.gz
+*.Rcheck/
+src/*.o
+src/*.so
+src/*.dll
+.httr-oauth
+
+# ── macOS ─────────────────────────────────────────
+.DS_Store
+.DS_Store?
+.Trashes
+.AppleDouble
+.LSOverride
+
+# ── Secrets ─────────────────────────
+.env

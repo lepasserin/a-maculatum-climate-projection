@@ -103,7 +103,8 @@ savedData <- pivot_wider(
   ECCclimateData,
   names_from = varName,
   values_from = varValue
-)
+) %>%
+  arrange(scenario, date)
 write.csv(
   savedData,
   "data/climate_data/clean_data/ECCC_climate_projections.csv",
