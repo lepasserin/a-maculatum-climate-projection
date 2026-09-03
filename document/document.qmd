@@ -17,6 +17,10 @@ bibliography: references.bib
 <!-- Chat with Doug:
         - I have altered it to de-emphasize the population model. 
         - Model is a matrix for the structural incorporation of lag, and no other reason. Lag is obviously important in a long-lived species.
+        - Literally every assumption about the matrix has no effect on the mean trend, excpet the lambda = 1. Should I argue that (1) we set it to zero becuase no discernable trend over BLISS period, (2) that's the only reasonable value we could put it at, and (3) represents the "treeatment vs. control" case. Shows how Dylan's discovered effects affect survuvorship in the absence of other effects. 
+        - The only two other things are:
+            - Lack of confidence intervals
+            - Extra variance in temperature (more realistic) is expected to decrease population sizes. So estimates are a little optimistic because of that.
         - I disagree that there should be the matrix in my Methods section. It's not the main thing, and lowkey misleading.
 -->
 
@@ -57,10 +61,10 @@ We applied two statistical bias corrections to the GCM data, in accordance with 
 [@sharma_BC_2007; @hagemann_BC_2011]. For mean and minimum temperature, additive linear scaling was used to correct for long-run bias in mean and minimum temperature data, following the procedure described in @hempel_tas_2013. For total precipitation, local intensity scaling was used to correct the intensity and frequency of rainy days, applied as described in @smitha_pr_2018. These procedures were applied to the GCM data over a 20-year period (2005-2024) where their results could be directly compared to the Algonquin East Gate Climate Station’s historical records. Once suitable correction factors had been identified, these corrections were applied to future GCM data (see [Appendix -@sec-appendix-bc] for explicit correction equations and a visual comparison of raw versus bias-corrected simulated data).
 
 <!-- Predicting breeding season information -->
-Once bias-corrected, GCM data was used to predict the salamander breeding season start and end dates, enabling the calculation of the specific environmental covariates used in the CJS model, for each year through to 2100. For a given year, the breeding season start date was estimated using that year’s mean April temperature (leveraging its strong, negative correlation with Bat Lake ice out date; [Appendix -@sec-appendix-survival]), and was set to end 22 days later, corresponding to the average breeding season length observed during the BLISS study period. Estimated intervals were validated by comparing hindcasted and observed environmental indices over our 2008-2022 study period ([Appendix -@sec-appendix-survival]). Using these indices, annual survivorship estimates were calculated for each year from 2005 to 2100 using the breeding migration model. This process was repeated for each of the three climate scenarios. Estimated survival probabilities were validated by comparing hindcasted estimates and fitted estimates based on observed data from 2008 to 2022 ([Appendix -@sec-appendix-survival]).
+Once bias-corrected, GCM data was used to predict the salamander breeding season start and end dates, enabling the calculation of the specific environmental covariates used in the CJS model, for each year through to 2100. For a given year, the breeding season start date was estimated using that year’s mean April temperature (leveraging its strong, negative correlation with Bat Lake ice out date; [Supplement -@sec-appendix-survival]), and was set to end 22 days later, corresponding to the average breeding season length observed during the BLISS study period (2008 to 2022). Estimated intervals were validated by comparing hindcasted and observed environmental indices over this same period ([Supplement -@sec-appendix-survival]). Using these indices, annual survivorship estimates were calculated for each year from 2005 to 2100 using the breeding migration model. This process was repeated for each of the three climate scenarios. Estimated survival probabilities were validated by comparing hindcasted estimates and fitted estimates based on observed data from 2008 to 2022 ([Supplement -@sec-appendix-survival]).
 
 <!-- Forecasting -->
-Finally, we used these estimated survival probabilities within a simple matrix model to project long-term population trajectories under different future climate scenarios, and in the absence of climate-driven effects on other population vital rates. Our chosen population model is a deterministic, female-only, age-structured matrix model where the final class represents all reproductively mature adults [@smith_leslie_1994]. We chose this model over a simpler one to account for the time lag between changes in adult survivorship and their effects on future adult recruitment. Since female spotted salamanders mature at around 6 years old (Boyle, 2012), this resulted in a seven-staged discrete growth model. We sourced fecundity estimates (i.e. the number of year-old females per adult female alive in the previous year) for the Bat Lake population from @moldowan_spotted_2023. As annual juvenile survivorship from ages 1 to 6 was unknown, these values were set such that the resulting model had a finite rate of increase ($\lambda$) of 1 under baseline conditions [@congdon_snapping_1994]. We considered the baseline conditions to be the  average values of the observed environmental indices over the BLISS study period (see [Appendix -@sec-appendix-forecast] for model parameterization). Projections were initialized in the year 2019 at the base model’s stable age distribution with 1840 adult females. We tested the sensitivity of our projections to changes in initial abundance, starting year, and all non-focal vital rates (fecundity, juvenile survival, age of maturity, holding $\lambda = 1$) in, finding that such variables had little effect on our results, within a reasonable searching range [Appendix -@sec-appendix-forecast].
+Finally, we used these estimated survival probabilities within a simple matrix model to project long-term population trajectories under different future climate scenarios, and in the absence of climate-driven effects on other population vital rates. Our chosen population model is a deterministic, female-only, age-structured matrix model where the final class represents all reproductively mature adults [@smith_leslie_1994]. We chose this model over a simpler one to account for the time lag between changes in adult survivorship and their effects on future adult recruitment. Since female spotted salamanders mature at around 6 years old (Boyle, 2012), this resulted in a seven-staged discrete growth model. We sourced fecundity estimates (i.e. the number of year-old females per adult female alive in the previous year) for the Bat Lake population from @moldowan_spotted_2023. As annual juvenile survivorship from ages 1 to 6 was unknown, these values were set such that the resulting model had a finite rate of increase ($\lambda$) of 1 under baseline conditions [@congdon_snapping_1994]. We considered the baseline conditions to be the  average values of the observed environmental indices over the BLISS study period (see [Supplement -@sec-appendix-forecast] for model parameterization). Projections were initialized in the year 2019 at the base model’s stable age distribution with 1840 adult females. We tested the sensitivity of our projections to changes in initial abundance, starting year, and all non-focal vital rates (fecundity, juvenile survival, age of maturity, holding $\lambda = 1$) finding that such variables had little effect on our results, within reasonable searching ranges [Supplement -@sec-appendix-forecast].
 
 <!-- TODO: in suppliment, combine p and f together, just call it f. -->
 
@@ -73,7 +77,7 @@ Finally, we used these estimated survival probabilities within a simple matrix m
 <!-------------------------------------------------------------------------------------------------------------------->
 
 \newpage
-\part*{Appendix}
+\part*{Supplement}
 \appendix
 \counterwithin{figure}{section}
 \counterwithin{table}{section}
@@ -127,7 +131,7 @@ The daily projections of mean temperature, minimum temperature, and total precip
 
 We implemented two bias correction methods to correct specific, systematic deviations between observed and simulated climate metrics. In both cases, these methods were first applied over a historical period (2005 to 2024) where observed daily climate data was available near our study site (measurements taken from Algonquin East Gate Climate Station), to determine suitable correction factors. Then, these correction factors were applied to correct bias in future projections (through to 2100), under the assumption that systematic bias in the past will manifest itself in the same way in the future. We note here that projections from all three SSPs considered were corrected using the same coefficients. 
 
-## Correcting Temperature Estimates
+## Correcting Temperature Forecasts
 
 For both mean and minimum daily temperature, downscaled estimates showed similar trends to observed measurements over the entire historical period, but with consistently higher monthly averages. Simulated temperatures also exhibited smaller day-to-day variation compared to observed trends, likely because our simulated estimates are based on the ensemble mean of 26 different GCMs, which artificially deflates variance. Methods that correct the variance and the mean in simulated temperature data simultaneously exist, but have been shown to impact the climate change signal in certain datasets [@hagemann_BC_2011]. Given how temperature projections are used in further analyses, we opted to only correct the systematic bias in the average, preserving the climate change signal most faithfully. To this end we applied additive linear scaling following @hempel_tas_2013, implemented as described below.
 
@@ -145,7 +149,7 @@ $$ {#eq-additive-linear-scaling-application}
 
 Notice that $C$ is calculated over the entire period, and not per-year. This allows us to apply the correction shown in @eq-additive-linear-scaling-application to every March in the forecasted simulated data. This procedure can then be repeated for April and May, mean and minimum temperatures separately, resulting in the estimation of 6 linear scaling constants to correct GCM-derived temperature forecasts.
 
-## Local Intensity Scaling
+## Correcting Precipitation Forecasts
 
 For daily total precipitation, downscaled estimates had similar monthly and seasonal averages as observed measurements, but grossly underestimated the day-to-day variance in precipitation, effectively predicting a drizzle each day. This resulted in an underestimated number of rainy days, and an underestimated intensity of wet days. Since the precipitation main effect used in our analysis is sensitive to the number of rainy days (see main text), this drizzle bias required correction. To this end we used local intensity scaling following @smitha_pr_2018, described below.
 
@@ -154,7 +158,7 @@ Let $i$ represent the March of a given year between 2005 and 2024. Then, let $P_
 $$
 P_{i,j}^{ADJ} =\begin{cases}0, & \text{if } P_{i,j}^{SIM} < t \\
 \left(P_{i,j}^{SIM} - t\right) \times D, & \text{otherwise}\end{cases}
-$$
+$$ {#eq-local-intensity-scaling-calculation}
 
 Similarly to temperature, three sets of $(D,t)$ pairs were fit, for each month in our dataset. 
 
@@ -170,6 +174,7 @@ All fitted correction factors are shown in @tbl-correction-factors. Monthly bias
 #| echo: false
 #| label: tbl-correction-factors
 #| tbl-cap: "Fitted correction factors applied to simulated climate projections."
+
 Table_1 <- read_csv(here::here("data/bias_correction_coefficients.csv")) %>%
     mutate(Value = round(Value, 5))
 half <- nrow(Table_1) / 2 # first half is temperature, second half is precipitation
@@ -254,14 +259,28 @@ Panel_C <- Fig_data %>% ggplot(aes(x = displayDay)) +
     plot_annotation(theme = theme(legend.position = "top"))
 ```
 
-# Visually Validating Environmental Index Forecasts {#sec-appendix-survival}
+# Forecasting Environmental Indices & Survival Probabilities {#sec-appendix-survival}
 
-Bias-corrected climate variables were used to forecast the following annual variables:
-- Breeding season start date (from which the breeding season end date was deterministically derived)
-- Inbound temperature index (see definition in main text)
-- Outbound precipitation index (see definition in main text)
+Bias-corrected daily weather forecasts were used to calculate four key measures, for each year from 2005 to 2100. First, average mean daily tempatures in April were used to predict the breeding season start date (during the BLISS study period, these measures were strongly correlated with $|\rho| = 0.5$). Breeding season end date was calculated directly from the start date, by adding the average breeding season length observed during the BLISS study period. Using the forecasted breeding season interval, we calculated the temperature and precipitation indices as they were calculated in the posthoc breeding migration model (see main text for their formulas). This series of predictions and calculations was made for each climate scenario separatetely.
 
-Here we present our forecasted indices, for the period from 2008 (start of the BLISS project) to 2100 (end of available GCM estimates). Three forecasts were made in each case, one for each of the three climate scenarios considered. Shown concurrently are the observed indices, available during the BLISS project study period (2008 to 2022). These are shown in Figures 2.1, 2.2, and 2.3. In each case, the simulated projection is similar to the mean of the observed index during the BLISS study period. However, the true year-to-year variance in these indices was always larger than what was produced from the GCM data, apart from forecasted precipitation indices, which matched observed variance quite closely.
+@fig-index-forecast displays the resulting time series of estimates for the breeding season start date and both climate indices. These graphs are also overlayed with the observed values during the BLISS study period. Average index hindcasts over this period were very similar to observed averages, for all climate scenarios. However, observed temperature indices displayed more annual variability that hindcasted ones.
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: fig-index-forecast
+#| fig-cap: "Time series of observed (black), and forecasted (coloured) indices, from 2005 to 2100. Panels A, B, and C display breeding season start date, temperature, and precipitation indices respectively. The grey shaded are represents the BLISS study period (2008 to 2022), and the horizontal dashed lines indicate the average observed index values during this period. ice out date observed during the BLISS study period (2008 to 2024)."
+#| fig-height: 7
+#| fig-width: 6
+```
+
+Forecasted climate indices (panel B and C in @fig-index-forecast) were used to estimate adult female survivial probabilities over the century, using the posthoc breeding migration model fit in the main text. The survival probability at year $t$ ($S_a(t)$) was derived from the temperature ($\text{Temp}$) and precipitation ($\text{Precip}$) indices estimated for that year using the following formula:
+
+$$
+S_a(t) = \text{logit}^{-1}\left[\beta_0 + \beta_1 \text{Temp(t)} + \beta_2 \text{Precip(t)}\right]
+$$ {#eq-survival-calculation}
+where $\beta_1$, $\beta_2$, and $\beta_3$ were fit using the breeding migration model. The resulting survival forecast for each climate scenario is displayed in @fig-survival-forecast.
 
 # Population Growth Model Specification {#sec-appendix-forecast}
 

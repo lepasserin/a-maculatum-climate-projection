@@ -1,4 +1,4 @@
-# Purpose: Implement two bias correction algorithms to derive a table of correction coefficients. Save table to file.
+# Purpose: Implement two bias correction algorithms to derive a table of correction coefficients.
 # Last Updated: Aug 16, 2026
 # Author: Benedict Cummins-Mburu.
 # Contact: b.cumminsmburu@mail.utoronto.ca.

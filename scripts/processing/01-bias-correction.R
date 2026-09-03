@@ -4,6 +4,7 @@
 # Contact: b.cumminsmburu@mail.utoronto.ca.
 
 # ------- Setup -------
+library(tidyverse)
 ECCC_raw_projections_only <- read_csv(
   "data/climate_data/clean_data/ECCC_climate_projections.csv"
 )
