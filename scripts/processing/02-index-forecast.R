@@ -36,6 +36,14 @@ B2_SURVIVAL <- 0.4460179
 
 # 1. fetch mean April temperature for a given `yr`, `scen`
 get_meanAprilTemp <- function(yr, scen, dataType = "ADJ") {
+  # input validation
+  if (!(scen %in% c("SSP126", "SSP245", "SSP585"))) {
+    stop("Error: {get_meanAprilTemp}: invalid scenario specified.")
+  }
+  if (!(yr %in% 2000:2100)) {
+    stop("Error: {get_meanAprilTemp}: invalid year specified.")
+  }
+  # calcultion
   focalData <- climate_projections %>%
     filter(scenario == scen, year == yr, month == "Apr")
   if (dataType == "ADJ") {
@@ -44,7 +52,7 @@ get_meanAprilTemp <- function(yr, scen, dataType = "ADJ") {
   if (dataType == "SIM") {
     return(mean(focalData$tas))
   }
-  stop("Error: {get_meanAprilTemp_from_EC}: invalid dataType entered.")
+  stop("Error: {get_meanAprilTemp}: invalid dataType entered.")
 }
 
 # 2. estimate breeding start (i.e. Bat Lake ice out) date from mean April temperature.
@@ -55,10 +63,10 @@ get_iceOut_from_meanAprilTemp <- function(meanAprilTemp) {
 # 3. calculate breeding end (i.e. peak egg mass) date from breeding start date.
 # ASSUMPTION: peak egg mass always occurs 22 days after ice out
 get_peakEggMass_from_iceOut <- function(iceOut) {
-  return(iceOut + mean_breedingSeasonLength)
+  return(iceOut + MEAN_LENGTH)
 }
 
-# 4. calculate climate indices for a given `yr`, `scen`,
+# 4. calculate climate indices for a given `yr`, `scen`, `iceOut`, `eggMass`
 get_climateIndices <- function(yr, scen, iceOut, eggMass, dataType = "ADJ") {
   tempInterval <- climate_projections %>%
     filter(
@@ -106,6 +114,79 @@ get_climateIndices <- function(yr, scen, iceOut, eggMass, dataType = "ADJ") {
   stop("Error: {get_climateIndices}: invalid dataType entered.")
 }
 
-# 5. XX
+# 5. Estimate survivorship from `temp` and `precip`, with the option to `supress` one variable.
+get_survival_from_indices <- function(temp, precip, supress = "none") {
+  # standardize temp and precip indices
+  standardizedT <- (temp - OBS_T_MEAN) / OBS_T_SD
+  standardizedP <- (precip - OBS_P_MEAN) / OBS_P_SD
+  # calculate survivorship
+  if (supress == "none") {
+    logitS <- B0_SURVIVAL +
+      B1_SURVIVAL * standardizedT +
+      B2_SURVIVAL * standardizedP
+  } else if (supress == "precip") {
+    logitS <- B0_SURVIVAL + B1_SURVIVAL * standardizedT
+  } else if (supress == "temp") {
+    logitS <- B0_SURVIVAL + B2_SURVIVAL * standardizedP
+  } else {
+    stop(
+      "Error: {get_survival_from_indices}: invalid supression string entered."
+    )
+  }
+  # revert logit and return
+  S <- 1 / (1 + exp(-logitS))
+  return(S)
+}
+
+# ------ Orchestrator ------
+
+calculate_indices <- function(yr, scen, dataType = "ADJ") {
+  # estimate breeding season start date
+  iceOut <- get_iceOut_from_meanAprilTemp(get_meanAprilTemp(yr, scen, dataType))
+  # estimate breeding season end date
+  peakEggMass <- get_peakEggMass_from_iceOut(iceOut)
+  # derive climate indices from interval
+  climateIndices <- get_climateIndices(yr, scen, iceOut, peakEggMass, dataType)
+  tempIndex <- climateIndices[1]
+  precipIndex <- climateIndices[2]
+  # calculat survivorship from indices
+  survivorship <- get_survival_from_indices(tempIndex, precipIndex)
+  survivorshipT <- get_survival_from_indices(tempIndex, precipIndex, "precip")
+  survivorshipP <- get_survival_from_indices(tempIndex, precipIndex, "temp")
+  # return single-row data frame
+  df <- data.frame(
+    year = yr,
+    scenario = scen,
+    breedingSeasonStart = iceOut,
+    breedingSeasonEnd = peakEggMass,
+    tempIndex = tempIndex,
+    precipIndex = precipIndex,
+    survivorship = survivorship,
+    survivorshipT = survivorshipT,
+    survivorshipP = survivorshipP
+  )
+  return(df)
+}
 
 # ----- Execution -----
+
+final_df <- data.frame(
+  year = integer(),
+  scenario = character(),
+  breedingSeasonStart = integer(),
+  breedingSeasonEnd = integer(),
+  tempIndex = numeric(),
+  precipIndex = numeric(),
+  survivorship = numeric(),
+  survivorshipT = numeric(),
+  survivorshipP = numeric()
+)
+for (scen in c("SSP126", "SSP245", "SSP585")) {
+  for (yr in 2000:2100) {
+    new_row <- calculate_indices(yr, scen)
+    final_df <- rbind(final_df, new_row)
+  }
+}
+
+# ------ Save Data ------
+write_csv(final_df, "data/forecast_data/index_forecasts.csv")

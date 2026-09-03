@@ -38,6 +38,8 @@ library(patchwork)
 BC_coefficients <- read_csv(here::here("data/bias_correction_coefficients.csv"))
 ECCC_projections_BC <- read_csv(here::here("data/climate_data/clean_data/ECCC_climate_projections_BC.csv"))
 AEG_historic <- read_csv(here::here("data/climate_data/clean_data/AEG_historic_climate.csv"))
+index_forecasts <- read_csv(here::here("data/forecast_data/index_forecasts.csv"))
+BLISS_data <- read_csv(here::here("data/BLISS_data.csv"))
 ```
 
 # Abstract (from pre-print)
@@ -61,12 +63,12 @@ We applied two statistical bias corrections to the GCM data, in accordance with 
 [@sharma_BC_2007; @hagemann_BC_2011]. For mean and minimum temperature, additive linear scaling was used to correct for long-run bias in mean and minimum temperature data, following the procedure described in @hempel_tas_2013. For total precipitation, local intensity scaling was used to correct the intensity and frequency of rainy days, applied as described in @smitha_pr_2018. These procedures were applied to the GCM data over a 20-year period (2005-2024) where their results could be directly compared to the Algonquin East Gate Climate Station’s historical records. Once suitable correction factors had been identified, these corrections were applied to future GCM data (see [Appendix -@sec-appendix-bc] for explicit correction equations and a visual comparison of raw versus bias-corrected simulated data).
 
 <!-- Predicting breeding season information -->
-Once bias-corrected, GCM data was used to predict the salamander breeding season start and end dates, enabling the calculation of the specific environmental covariates used in the CJS model, for each year through to 2100. For a given year, the breeding season start date was estimated using that year’s mean April temperature (leveraging its strong, negative correlation with Bat Lake ice out date; [Supplement -@sec-appendix-survival]), and was set to end 22 days later, corresponding to the average breeding season length observed during the BLISS study period (2008 to 2022). Estimated intervals were validated by comparing hindcasted and observed environmental indices over this same period ([Supplement -@sec-appendix-survival]). Using these indices, annual survivorship estimates were calculated for each year from 2005 to 2100 using the breeding migration model. This process was repeated for each of the three climate scenarios. Estimated survival probabilities were validated by comparing hindcasted estimates and fitted estimates based on observed data from 2008 to 2022 ([Supplement -@sec-appendix-survival]).
+Once bias-corrected, GCM data was used to predict the salamander breeding season start and end dates, enabling the calculation of the specific environmental covariates used in the CJS model, for each year through to 2100. For a given year, the breeding season start date was estimated using that year’s mean April temperature (leveraging its strong, negative correlation with Bat Lake ice out date; [Supplement -@sec-appendix-survival]), and was set to end 22 days later, corresponding to the average breeding season length observed during the BLISS study period (2008 to 2022). Estimated intervals were validated by comparing hindcasted and observed environmental indices over this same period ([Supplement -@sec-appendix-survival]). Using these indices, annual survivorship estimates were calculated for each year from 2005 to 2100 using the breeding migration model. This process was repeated for each of the three climate scenarios.
 
 <!-- Forecasting -->
-Finally, we used these estimated survival probabilities within a simple matrix model to project long-term population trajectories under different future climate scenarios, and in the absence of climate-driven effects on other population vital rates. Our chosen population model is a deterministic, female-only, age-structured matrix model where the final class represents all reproductively mature adults [@smith_leslie_1994]. We chose this model over a simpler one to account for the time lag between changes in adult survivorship and their effects on future adult recruitment. Since female spotted salamanders mature at around 6 years old (Boyle, 2012), this resulted in a seven-staged discrete growth model. We sourced fecundity estimates (i.e. the number of year-old females per adult female alive in the previous year) for the Bat Lake population from @moldowan_spotted_2023. As annual juvenile survivorship from ages 1 to 6 was unknown, these values were set such that the resulting model had a finite rate of increase ($\lambda$) of 1 under baseline conditions [@congdon_snapping_1994]. We considered the baseline conditions to be the  average values of the observed environmental indices over the BLISS study period (see [Supplement -@sec-appendix-forecast] for model parameterization). Projections were initialized in the year 2019 at the base model’s stable age distribution with 1840 adult females. We tested the sensitivity of our projections to changes in initial abundance, starting year, and all non-focal vital rates (fecundity, juvenile survival, age of maturity, holding $\lambda = 1$) finding that such variables had little effect on our results, within reasonable searching ranges [Supplement -@sec-appendix-forecast].
+Finally, we used these estimated survival probabilities within a simple matrix model to project long-term population trajectories under different future climate scenarios. We note that this matrix model was not intended to be a realistic population forecast. Our aim was simply to better understand how the environmental effects on survival identified in this study, in isolation, manifest at the population level, in the absence of other climate-driven effects on vital rates, and under the assumption that population growth is currently stable (i.e. $\lambda = 1$).
 
-<!-- TODO: in suppliment, combine p and f together, just call it f. -->
+Our chosen population model is a deterministic, female-only, age-structured matrix model where the final class represents all reproductively mature adults [@smith_leslie_1994]. We chose this model over a simpler one to account for the time lag between changes in adult survivorship and their effects on future adult recruitment. Since female spotted salamanders mature at around 6 years old (Boyle, 2012), this resulted in a seven-staged discrete growth model. We sourced fecundity estimates (i.e. the number of year-old females per adult female alive in the previous year) for the Bat Lake population from @moldowan_spotted_2023. As annual juvenile survivorship from ages 1 to 6 was unknown, these values were set such that the resulting model had a finite rate of increase ($\lambda$) of 1 under baseline conditions [@congdon_snapping_1994]. We considered the baseline conditions to be the average values of the observed environmental indices over the BLISS study period (see [Supplement -@sec-appendix-forecast] for model parameterization). Projections were initialized in the year 2019 at the base model’s stable age distribution with 1840 adult females. We tested the sensitivity of our projections to changes in initial abundance, starting year, and all non-focal vital rates (fecundity, juvenile survival, and age of maturity, holding $\lambda = 1$), finding that such variables had little effect on our results, within reasonable searching ranges [Supplement -@sec-appendix-forecast].
 
 # Results: Projecting Survivorship & Abundance under Climate Change (from pre-print)
 
@@ -261,7 +263,9 @@ Panel_C <- Fig_data %>% ggplot(aes(x = displayDay)) +
 
 # Forecasting Environmental Indices & Survival Probabilities {#sec-appendix-survival}
 
-Bias-corrected daily weather forecasts were used to calculate four key measures, for each year from 2005 to 2100. First, average mean daily tempatures in April were used to predict the breeding season start date (during the BLISS study period, these measures were strongly correlated with $|\rho| = 0.5$). Breeding season end date was calculated directly from the start date, by adding the average breeding season length observed during the BLISS study period. Using the forecasted breeding season interval, we calculated the temperature and precipitation indices as they were calculated in the posthoc breeding migration model (see main text for their formulas). This series of predictions and calculations was made for each climate scenario separatetely.
+Bias-corrected daily weather forecasts were used to calculate four key measures, for each year from 2005 to 2100. First, average mean daily tempatures in April were used to predict the breeding season start date (during the BLISS study period, these measures were strongly correlated; $|\rho| = 0.5$). Breeding season end date was calculated directly from the start date, by adding the average breeding season length observed during the BLISS study period. Using the forecasted breeding season interval, we calculated the temperature and precipitation indices as they were calculated in the posthoc breeding migration model (see main text for their formulas). This series of predictions and calculations was made for each climate scenario separatetely.
+
+<!-- TODO: replace the rho value with the actual value. -->
 
 @fig-index-forecast displays the resulting time series of estimates for the breeding season start date and both climate indices. These graphs are also overlayed with the observed values during the BLISS study period. Average index hindcasts over this period were very similar to observed averages, for all climate scenarios. However, observed temperature indices displayed more annual variability that hindcasted ones.
 
@@ -270,9 +274,106 @@ Bias-corrected daily weather forecasts were used to calculate four key measures,
 #| message: false
 #| echo: false
 #| label: fig-index-forecast
-#| fig-cap: "Time series of observed (black), and forecasted (coloured) indices, from 2005 to 2100. Panels A, B, and C display breeding season start date, temperature, and precipitation indices respectively. The grey shaded are represents the BLISS study period (2008 to 2022), and the horizontal dashed lines indicate the average observed index values during this period. ice out date observed during the BLISS study period (2008 to 2024)."
+#| fig-cap: "Time series of observed (black), and forecasted (coloured) indices, from 2005 to 2100. Panels A, B, and C display breeding season start date, temperature, and precipitation indices respectively. The grey shaded areas represent the BLISS study period (2008 to 2022), and the horizontal dashed lines indicate the average observed index values during this period. The climate scenario labelled 'SSP2' is emphasized for visual contrast."
 #| fig-height: 7
 #| fig-width: 6
+
+plot_colours <- c(
+    "Observed" = "black",
+    "SSP1" = "forestgreen",
+    "SSP2" = "navyblue",
+    "SSP5" = "darkred"
+)
+
+# prepare data
+BLISS_data_relevant <- BLISS_data %>%
+    select(year, breedingSeasonStart, tempIndex, precipIndex)
+plotting_data <- index_forecasts %>% pivot_wider(
+    id_cols = year,
+    names_from = scenario,
+    values_from = c(breedingSeasonStart, tempIndex, precipIndex, survivorship)
+    ) %>% left_join(
+        BLISS_data_relevant,
+        by = "year"
+    ) %>%
+    filter(year >= 2005)
+
+# panel A: breedingSeasonStart
+panel_A <- plotting_data %>% ggplot(aes(x = year)) +
+    annotate(
+        "rect",
+        xmin = 2008, xmax = 2022,
+        ymin = -Inf, ymax = Inf,
+        fill = "grey", alpha = 0.3
+    ) +
+    geom_line(aes(y = mean(plotting_data$breedingSeasonStart, na.rm = TRUE)), linetype = "dashed") +
+    geom_line(aes(y = breedingSeasonStart, colour = "Observed")) +
+    geom_line(aes(y = breedingSeasonStart_SSP126, colour = "SSP1"), alpha = 0.4) +
+    geom_line(aes(y = breedingSeasonStart_SSP245, colour = "SSP2"), linewidth = 0.8) +
+    geom_line(aes(y = breedingSeasonStart_SSP585, colour = "SSP5"), alpha = 0.4) +
+    theme_classic() +
+    scale_colour_manual(
+        name = NULL,
+        values = plot_colours
+    ) +
+    labs(
+        title = "A. Breeding Season Starting Date Forecast",
+        x = "Time (Years)",
+        y = "Estimated Breeding Season Start Date (Ordinal)"
+    ) + diagnostic_theme
+
+# panel B: tempIndex
+panel_B <- plotting_data %>% ggplot(aes(x = year)) +
+    annotate(
+        "rect",
+        xmin = 2008, xmax = 2022,
+        ymin = -Inf, ymax = Inf,
+        fill = "grey", alpha = 0.3
+    ) +
+    geom_line(aes(y = mean(plotting_data$tempIndex, na.rm = TRUE)), linetype = "dashed") +
+    geom_line(aes(y = tempIndex, colour = "Observed")) +
+    geom_line(aes(y = tempIndex_SSP126, colour = "SSP1"), alpha = 0.4) +
+    geom_line(aes(y = tempIndex_SSP245, colour = "SSP2"), linewidth = 0.8) +
+    geom_line(aes(y = tempIndex_SSP585, colour = "SSP5"), alpha = 0.4) +
+    theme_classic() +
+    scale_colour_manual(
+        name = NULL,
+        values = plot_colours
+    ) +
+    labs(
+        title = "B. Temperature Index Forecast",
+        x = "Time (Years)",
+        y = "Temperature Index"
+    ) + diagnostic_theme
+
+# panel C: precipIndex
+panel_C <- plotting_data %>% ggplot(aes(x = year)) +
+    annotate(
+        "rect",
+        xmin = 2008, xmax = 2022,
+        ymin = -Inf, ymax = Inf,
+        fill = "grey", alpha = 0.3
+    ) +
+    geom_line(aes(y = mean(plotting_data$precipIndex, na.rm = TRUE)), linetype = "dashed") +
+    geom_line(aes(y = precipIndex, colour = "Observed")) +
+    geom_line(aes(y = precipIndex_SSP126, colour = "SSP1"), alpha = 0.4) +
+    geom_line(aes(y = precipIndex_SSP245, colour = "SSP2"), linewidth = 0.8) +
+    geom_line(aes(y = precipIndex_SSP585, colour = "SSP5"), alpha = 0.4) +
+    theme_classic() +
+    scale_colour_manual(
+        name = NULL,
+        values = plot_colours
+    ) +
+    labs(
+        title = "C. Precipitation Index Forecast",
+        x = "Time (Years)",
+        y = "Precipitation Index"
+    ) + diagnostic_theme
+
+# combine
+(panel_A / panel_B / panel_C) +
+    plot_layout(widths = c(1.6, 1), guides = "collect") +
+    plot_annotation(theme = theme(legend.position = "top"))
 ```
 
 Forecasted climate indices (panel B and C in @fig-index-forecast) were used to estimate adult female survivial probabilities over the century, using the posthoc breeding migration model fit in the main text. The survival probability at year $t$ ($S_a(t)$) was derived from the temperature ($\text{Temp}$) and precipitation ($\text{Precip}$) indices estimated for that year using the following formula:
@@ -282,26 +383,80 @@ S_a(t) = \text{logit}^{-1}\left[\beta_0 + \beta_1 \text{Temp(t)} + \beta_2 \text
 $$ {#eq-survival-calculation}
 where $\beta_1$, $\beta_2$, and $\beta_3$ were fit using the breeding migration model. The resulting survival forecast for each climate scenario is displayed in @fig-survival-forecast.
 
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: fig-survival-forecast
+#| fig-cap: "Time series of estimated adult female survivorship ($S_a$) from 2005 to 2100, based on environmental data derived from global climate model projections. Three climate scenario (SSP1, SSP2, and SSP3) were considered, and their trends are colored accordingly. The horizontal dashed line indicates the adult female survivorship estimated at the average environmental values observed during the BLISS study period (2008 to 2022). Both smoothed (bold) and raw (faded) projections are shown. Smoothed trends are emphasized to better visualize differences between the climate scenarios."
+#| fig-height: 4
+#| fig-width: 6
+
+dashed_intercept <- 0.72
+MA_RADIUS <- 6
+
+plotting_data <- plotting_data %>%
+    mutate(
+        survivorship_SSP126_smooth = smooth.ma(survivorship_SSP126, MA_RADIUS),
+        survivorship_SSP245_smooth = smooth.ma(survivorship_SSP245, MA_RADIUS),
+        survivorship_SSP585_smooth = smooth.ma(survivorship_SSP585, MA_RADIUS)
+    )
+
+plot <- plotting_data %>% ggplot(aes(x = year)) +
+    geom_line(aes(y = dashed_intercept), linetype = "dashed") +
+    geom_line(aes(y = survivorship_SSP126, colour = "SSP1"), alpha = 0.25) +
+    geom_line(aes(y = survivorship_SSP245, colour = "SSP2"), alpha = 0.25) +
+    geom_line(aes(y = survivorship_SSP585, colour = "SSP5"), alpha = 0.25) +
+    geom_line(aes(y = survivorship_SSP126_smooth, colour = "SSP1")) +
+    geom_line(aes(y = survivorship_SSP245_smooth, colour = "SSP2")) +
+    geom_line(aes(y = survivorship_SSP585_smooth, colour = "SSP5")) +
+    theme_classic() +
+    scale_colour_manual(
+        name = NULL,
+        values = plot_colours
+    ) +
+    labs(
+        x = "Time (Years)",
+        y = "Estimated Adult Female Survivorship"
+    ) + diagnostic_theme
+
+plot
+```
+
 # Population Growth Model Specification {#sec-appendix-forecast}
 
-We used a modified age-structured population growth model to forecast the female Bat Lake spotted salamander population through time. Let $N_t$ be a vector of length seven representing the population of salamanders, binned into age groups, in year $t$. Then, the population in the following year ($N_{t+1}$) is calculated as follows:
+We used a simple, deterministic matrix model to forecast the female Bat Lake spotted salamander population through time. Let $\textbf{N}_t$ be a vector representing the population of salamanders, binned into age groups, in year $t$. Then, the population in the following year ($\textbf{N}_{t+1}$) is calculated as follows:
 
-[Equation]
+$$
+\textbf{N}_{t+1} = \textbf{N}_t \cdot \textbf{L}_t
+$$ {#eq-growth-model}
 
-Population growth in our model is governed primarily by the annual adult female survivorship term $S_a\left(t\right)$, which varies from year to year according to those environmental characteristics which correlated with survivorship in the CJS survivorship model fit in the main paper. We write:
 
-[Equation]
+where $\textbf{L}_t$ is the population projection matrix in year $t$, defined to be:
 
-where $\text{Temp}_{t,j}$ and $\text{Precip}_{t,j}$ are the standardized temperature and precipitation indices (see main text for full definitions) of Bat Lake in the year $t$ and climate scenario $j$. $\beta_i$ are the fitted coefficients from the CJS survivorship model. $S_a\left(t\right)$ estimates for every scenario for each year from 2000 to 2100 are shown visually in Figure 3.1.
+$$
+\textbf{L}_t =
+\begin{bmatrix}
+0 & 0 & 0 & 0 & 0 & 0 & f \\
+S_m & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & S_m & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & S_m & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & S_m & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & S_m & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & S_m & S_a(t)
+\end{bmatrix}
+$$ {#eq-projection-matrix}
 
-Population growth also depends on three other life-history parameters which were held constant over time. $S_m$ denotes the subadult (i.e. metamorph) annual survivorship, which is shared between all subadult age classes, $p$ denotes the probability that a mature female skips reproduction in a year, and $f$ denotes the average number of offspring which survive until the next year produced by a reproducing female. Reproductive skipping is a well-documented component of yellow spotted salamander life-history. All parameter estimates are reported in Table 3.1. While skipping and fecundity estimates could be found in the literature, subadult survivorship could not. As such, the parameter was numerically optimized such that the resulting model had a finite rate of increase $\lambda$ near 1, when $S_a\left(t\right)=\text{logit}^{-1}(\beta_0) \approx 0.72$ (i.e., adult female survivorship assuming study-average temperature and precipitation indices). We thought this decision sensible since the population did not show signs of increase or decrease during the BLISS study period (2008 to 2024). This baseline survivorship was also used to derive the stable-age distribution of the population, using the `eigen.analysis` function from the `popbio` package in R. Projections were initialized in the year 2019 at the base model’s stable age distribution with 1840 starting adult females.
+Population growth in this model is governed primarily by the annual adult female survivorship term $S_a\left(t\right)$, which varies from year to year according to those environmental characteristics which correlated with survivorship in the CJS survivorship model fit in the main paper (@eq-survival-calculation). However, population growth in this model also depends on two other life-history parameters ($f$ and $S_m$), which were assumed to be constant over time. $f$ represents the average number of female offspring that will survive a full year that are produced by a single mature female. This was set to 0.705, derived from Moldowan, 2023. $S_m$ represents subadult survivorship, and an estimate for this value could not be found in the literature. As such, $S_m$ was numerically optimized such that the resulting model had a finite rate of increase $\lambda$ near 1, when $S_a\left(t\right)=\text{logit}^{-1}(\beta_0) \approx 0.72$ (i.e., adult female survivorship assuming study-average temperature and precipitation indices). We thought this decision sensible since the population did not show signs of increase or decrease during the BLISS study period (2008 to 2022). This baseline survivorship was also used to derive the stable-age distribution of the population, using the `eigen.analysis` function from the `popbio` package in R. Projections were initialized in the year 2019 at the base model’s stable age distribution with 1840 starting adult females.
 
-We tested the robustness of our population projections by varying the following elements of our model and comparing the output with the base run:
+Given the uncertainty around some of our modelling decisions, we tested the robustness of our population projections by varying the following elements of our projection and comparing the output with the base run:
 
-  - Different combinations of the non-focal parameters $p$, $f$ (optimizing $S_m$ such that $\lambda$ is near 1 in each case).
+  - Different combinations of the non-focal parameters $p$ and $S_m$ (holding $\lambda \approx 1$ in each case)
+  - Different age-at-maturity (checked from 5 to 9)
   - Earlier starting year (checked from 2000 to 2025).
+  - Different starting abundance (checked from 1000 to 2000).
 
-The results of these robustness tests are displayed in Figures 3.2 and Figure 3.3 respectively, and show that our projections are not sensitive to changes in either case. On top of these computational verifications, we know mathematically that varying the absolute starting abundance does not change the relative model dynamics at all.
+These tests revealed that our population projection results were similar under other reasonable life-history assumptions and projection initializations. In particular, the relative trends in abundance across different climate scenarios were qualitatively preserved in each case. Therefore, the only effective assumptions being made when translating survivorship forecasts to abundance forecasts is that $\lambda \approx 1$, and that the population is at stable-age distribution.
 
 # References
 
