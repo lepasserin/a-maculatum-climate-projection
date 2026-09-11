@@ -10,7 +10,7 @@ This report describes the methods and results of a data-scientific pipeline fore
 - `document`: QMD file containing the full writeup of the analysis and data visualizations. Also contains project references and a PDF of the writeup.
 - `scripts`: cleaning and analytical R scripts used to carry out the analysis.
 
-## Data Acquisition Declaration
+## Data Acquisition
 
 All raw data used in this project was either provided directly by the BLISS (Bat Lake Inventory of Spotted Salamanders) research team, or sourced from [this page](https://climate-scenarios.canada.ca/?page=CanDCS6-data) at Environment and Climate Change Canada, using the following parameters:
 - **Dataset**: CanDCS-M6
