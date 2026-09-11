@@ -1,6 +1,6 @@
 ---
 title: Climate Impact Analysis of Bat Lake Salamanders (*A. maculatum*)
-abstract: This report describes an analytical pipeline forecasting a northern population of yellow spotted salamanders over the remainder of the 21st century. The analysis exists as part of a larger research paper (Kaufman et al., 20XX), and much of the text, figures, and tables in this report were taken directly from there. All code and data used to complete this sub-analysis are available  at <https://github.com/lepasserin/a-maculatum-climate-impact>.
+abstract: This report describes the methods and results of a data-scientific pipeline forecasting survivorship probabilities of a northern population of yellow spotted salamanders under alternate climate scenarios. The writing and figures presented here form part of a larger research paper on *A. maculatum* survivorship (Kaufman et al., 20XX). All code and data used to complete this sub-analysis are viewable at <https://github.com/lepasserin/a-maculatum-climate-impact>.
 author: Benedict Cummins-Mburu
 date: today
 date-format: long
@@ -10,19 +10,10 @@ number-sections: true
 bibliography: references.bib
 ---
 
-<!-- Questions for Dylan:
-        - Just for fun, do you have an R^2 value for the fitted Bayesian model? How much variance is explained by just the two climate variables?
+<!-- QUESTIONS FOR DYLAN:
+    - Can I have access to your model object in R? Just to see what information I have access to. Plus, fun to see the R^2 and coeffient uncertainty.
 -->
 
-<!-- Chat with Doug:
-        - I have altered it to de-emphasize the population model. 
-        - Model is a matrix for the structural incorporation of lag, and no other reason. Lag is obviously important in a long-lived species.
-        - Literally every assumption about the matrix has no effect on the mean trend, excpet the lambda = 1. Should I argue that (1) we set it to zero becuase no discernable trend over BLISS period, (2) that's the only reasonable value we could put it at, and (3) represents the "treeatment vs. control" case. Shows how Dylan's discovered effects affect survuvorship in the absence of other effects. 
-        - The only two other things are:
-            - Lack of confidence intervals
-            - Extra variance in temperature (more realistic) is expected to decrease population sizes. So estimates are a little optimistic because of that.
-        - I disagree that there should be the matrix in my Methods section. It's not the main thing, and lowkey misleading.
--->
 
 ```{r}
 #| include: false
@@ -41,52 +32,6 @@ AEG_historic <- read_csv(here::here("data/climate_data/clean_data/AEG_historic_c
 index_forecasts <- read_csv(here::here("data/forecast_data/index_forecasts.csv"))
 BLISS_data <- read_csv(here::here("data/BLISS_data.csv"))
 ```
-
-# Abstract (from pre-print)
-
-<!-- Staging -->
-Temperate regions experience pronounced interannual climatic variability, providing the opportunity to understand the drivers of temporal variation in survival, and to model future impacts of environmental change. Temperate amphibians are sensitive to climatic variation and are experiencing dramatic declines in range size and abundance under global environmental change. We developed a priori hypotheses for climate effects on amphibian survival, then combine fifteen years of mark-recapture data from a population of spotted salamanders (*Ambystoma maculatum*) with Bayesian hierarchical modelling to test the association between environmental variables and annual survival. We found that greater temperatures during the spring inbound breeding migration led to a 50% decline in annual survival, while greater precipitation during the outbound migration was associated with a survival increase of 30%. Evaporative water loss may be the major driver of survival variation during the spring migration.
-
-<!-- My Section; TODO: Finish writing  this second section of the Abstract when figured out how to reword Results -->
-We then projected estimates of adult female survival to the year 2100 under three climate change scenarios while incorporating the estimated effects of environmental variables on adult survival and assuming that assuming that other population parameters would be unchanged. In the milest scenario, the projected increase in spring precipitation were able to compensate for their warmer temperatures, resulting in an approximately stable population size. Faced with more extreme future climates, the population declines to over half of its initial size. Our study draws urgent attention to the migratory dynamics of temperate, spring breeding amphibians faced with a changing climate.
-
-# Methods: Projecting Survivorship & Abundance under Climate Change (from pre-print)
-
-<!-- Overview -->
-We paired results from the posthoc breeding migration model with climate forecasting data to project estimates of annual survivorship for the Bat Lake Spotted Salamander population through the remainder of the $\mathrm{21}^\mathrm{st}$ century. First, we forecast the inbound temperature and outbound precipitation covariates from the breeding migration model using climate data from global circulation models (GCMs), under three climate scenarios. These forecasts were then used to estimate future adult female annual survival probabilities. These survivorship estimates were also embedded into a matrix model to project the potential impacts of these changing climatic indices on abundance, in the absence of other effects.
-
-<!-- Downloading climate data -->
-Estimates of mean temperature, minimum temperature and total precipitation were required for each day between March–May for the years 2005–2100 to calculate the migration model’s environmental covariates. These data were sourced from the Coupled Model Intercomparison Project Phase 6 (CMIP6) dataset, which provides daily weather predictions that have been statistically downscaled to spatial resolutions of 10 $\text{km}^2$ [@eyring_CMIP6_2016]. We used the closest available grid point to the Algonquin East Gate Climate Station (45° 32' N, 78° 17' W), approximately 2.2 $\text{km}$ away. For each climate variable, the ensemble mean of the 26 available GCMs was used. Three such datasets were compiled, one for each of three Shared Socio-economic Pathways (SSPs) representing conservative (SSP1), moderate (SSP2) and extreme (SSP5) fossil-fueled development respectively [@riahi_scenarios_2017].
-
-<!-- Correcting climate data -->
-We applied two statistical bias corrections to the GCM data, in accordance with standard practice for climate impact analysis
-[@sharma_BC_2007; @hagemann_BC_2011]. For mean and minimum temperature, additive linear scaling was used to correct for long-run bias in mean and minimum temperature data, following the procedure described in @hempel_tas_2013. For total precipitation, local intensity scaling was used to correct the intensity and frequency of rainy days, applied as described in @smitha_pr_2018. These procedures were applied to the GCM data over a 20-year period (2005-2024) where their results could be directly compared to the Algonquin East Gate Climate Station’s historical records. Once suitable correction factors had been identified, these corrections were applied to future GCM data (see [Appendix -@sec-appendix-bc] for explicit correction equations and a visual comparison of raw versus bias-corrected simulated data).
-
-<!-- Predicting breeding season information -->
-Once bias-corrected, GCM data was used to predict the salamander breeding season start and end dates, enabling the calculation of the specific environmental covariates used in the CJS model, for each year through to 2100. For a given year, the breeding season start date was estimated using that year’s mean April temperature (leveraging its strong, negative correlation with Bat Lake ice out date; [Supplement -@sec-appendix-survival]), and was set to end 22 days later, corresponding to the average breeding season length observed during the BLISS study period (2008 to 2022). Estimated intervals were validated by comparing hindcasted and observed environmental indices over this same period ([Supplement -@sec-appendix-survival]). Using these indices, annual survivorship estimates were calculated for each year from 2005 to 2100 using the breeding migration model. This process was repeated for each of the three climate scenarios.
-
-<!-- Forecasting -->
-Finally, we used these estimated survival probabilities within a simple matrix model to project long-term population trajectories under different future climate scenarios. We note that this matrix model was not intended to be a realistic population forecast. Our aim was simply to better understand how the environmental effects on survival identified in this study, in isolation, manifest at the population level, in the absence of other climate-driven effects on vital rates, and under the assumption that population growth is currently stable (i.e. $\lambda = 1$).
-
-Our chosen population model is a deterministic, female-only, age-structured matrix model where the final class represents all reproductively mature adults [@smith_leslie_1994]. We chose this model over a simpler one to account for the time lag between changes in adult survivorship and their effects on future adult recruitment. Since female spotted salamanders mature at around 6 years old (Boyle, 2012), this resulted in a seven-staged discrete growth model. We sourced fecundity estimates (i.e. the number of year-old females per adult female alive in the previous year) for the Bat Lake population from @moldowan_spotted_2023. As annual juvenile survivorship from ages 1 to 6 was unknown, these values were set such that the resulting model had a finite rate of increase ($\lambda$) of 1 under baseline conditions [@congdon_snapping_1994]. We considered the baseline conditions to be the average values of the observed environmental indices over the BLISS study period (see [Supplement -@sec-appendix-forecast] for model parameterization). Projections were initialized in the year 2019 at the base model’s stable age distribution with 1840 adult females. We tested the sensitivity of our projections to changes in initial abundance, starting year, and all non-focal vital rates (fecundity, juvenile survival, and age of maturity, holding $\lambda = 1$), finding that such variables had little effect on our results, within reasonable searching ranges [Supplement -@sec-appendix-forecast].
-
-# Results: Projecting Survivorship & Abundance under Climate Change (from pre-print)
-
-<!-- TODO: refactor to first talk about the survivorship trajectories (these should be plotted), and THEN about the resulting demographic predictions. -->
-
-
-
-<!-------------------------------------------------------------------------------------------------------------------->
-
-\newpage
-\part*{Supplement}
-\appendix
-\counterwithin{figure}{section}
-\counterwithin{table}{section}
-\renewcommand{\thefigure}{\thesection\arabic{figure}}
-\renewcommand{\thetable}{\thesection\arabic{table}}
-
-# Statistical Bias Corrections {#sec-appendix-bc}
 
 ```{r}
 #| warning: false
@@ -109,12 +54,6 @@ BC_diagnostics <- ECCC_projections_BC %>%
     ) %>%
         left_join(AEG_historic_join, by = "date")
 
-# shared plotting constants for the diagnostic figures below
-plot_colours <- c(
-    "Observed" = "black",
-    "Simulated" = "navyblue",
-    "Bias-corrected" = "forestgreen"
-)
 diagnostic_theme <- theme_classic() +
     theme(
         legend.position = "top",
@@ -128,6 +67,116 @@ diagnostic_theme <- theme_classic() +
 # all panels of the BC diagnostics illustrate the same single year
 DIAGNOSTIC_YEAR <- 2010
 ```
+
+
+# Abstract
+
+<!-- Staging -->
+Temperate regions experience pronounced interannual climatic variability, providing the opportunity to understand the drivers of temporal variation in survival, and to model future impacts of environmental change. Temperate amphibians are sensitive to climatic variation and are experiencing dramatic declines in range size and abundance under global environmental change. We developed a priori hypotheses for climate effects on amphibian survival, then combine fifteen years of mark-recapture data from a population of spotted salamanders (*Ambystoma maculatum*) with Bayesian hierarchical modelling to test the association between environmental variables and annual survival. We found that greater temperatures during the spring inbound breeding migration led to a 50% decline in annual survival, while greater precipitation during the outbound migration was associated with a survival increase of 30%. Evaporative water loss may be the major driver of survival variation during the spring migration.
+
+<!-- My Section -->
+We then projected estimates of adult survival to the year 2100 under three climate change scenarios, incorporating the significant effects of inbound temperature and outbound precipitation. In the milest scenario, projected increases in spring precipitation intensity were able to compensate for the negative effects of warmer spring temperatures, resulting in end-of-centry survivorship estimates that were larger than current ones. However, faced with more extreme future climates, survivorship was projected to fall below current estimates. Our study draws urgent attention to the migratory dynamics of temperate, spring breeding amphibians faced with a changing climate.
+
+# Methods: Projecting Survivorship under Future Climate Change
+
+<!-- Overview -->
+We paired results from the posthoc breeding migration model with climate forecasts to estimate survival probabilities for the population of spotted salamanders in Bat Lake through the remainder of the $\text{21}^\text{st}$ century. To generate these estimates, we first forecasted the inbound temperature and outbound precipitation covariates used in the breeding migration model using climate data from global circulation models (GCMs). Then, these forecasts were used to predict future survival probabilities of adults in the population.
+
+<!-- Downloading climate data -->
+Estimates of mean temperature, minimum temperature and total precipitation were required for each day of March, April, and May from 2005 to 2100 to provide reasonable estimates of the migration model’s environmental covariates. These estimates were sourced from global circulation model (GCM) output. In particular, we used the Coupled Model Intercomparison Project Phase 6 (CMIP6) dataset, which provides our required weather predictions for each day up until 2100 [@eyring_CMIP6_2016]. CMIP6 offers statistically downscaled weather predictions at spatial resolutions of 10 $\text{km}^2$, made publicly available by Environment and Climate Change Canada [@eccc_2024]. We used the closest available grid point to the Algonquin East Gate Climate Station (45° 32' N, 78° 17' W), approximately 2.2 $\text{km}$ away. For each climate variable considered, we used the ensemble mean of 26 different GCMs for our estimate. Estimates were recorded for three distinct climate scenarios, representing conservative (SSP1), moderate (SSP2) and extreme (SSP5) fossil-fueled development respectively [see @riahi_scenarios_2017 for more detailed descriptions of these].
+
+<!-- Correcting climate data -->
+We applied two statistical bias correction algorithms to the GCM-derived climate forecasts, in accordance with standard practice for climate impact analysis [@sharma_BC_2007; @hagemann_BC_2011]. For the mean and minimum temperature estimates, additive linear scaling was used to correct for long-run bias in the downscaled temperature data, following the procedure described in @hempel_tas_2013. For total precipitation, local intensity scaling was used to correct the intensity and frequency of rainy days, applied as described in @smitha_pr_2018. In both cases, the algorithms were first applied to GCM-dervied estimates over a 20-year "historical" period (2005-2024), where they could be directly compared to the Algonquin East Gate Climate Station’s recorded observations. Once suitable correction factors had been identified, the correction algorithms were applied to future GCM-derived estimates data. Supplement -@sec-appendix-bc provides the explicit correction equations that were used, as well as visual comparisons between simulated, observed, and bias-corrected climate estimates.
+
+<!-- Predicting breeding season information -->
+Once bias-corrected, daily climate forecasts were used to predict the salamander breeding season start and end dates, for each year through to 2100. This allowed us to forecast for the specific environmental covariates used in the post-hoc breeding migration model, and, ultimately, annual survivorship. For a given year, the breeding season start date (equivalently, the Bat Lake ice out date) was predicted using that year’s mean April temperature, leveraging their strong, negative correlation observed during the BLISS study period, from 2008 to 2022 (Figure S2). The breeding season end date was always set to occur 22 days later, representing the average breeding season length observed during the same time period. Once determined, estimated breeding season intervals were used to calculate inbound temperature and outbound precipitation indices (see their equations in the section above). These indices were validated by comparing their hindcasted and observed values over the BLISS study period ([Supplement -@sec-appendix-survival]). Using the fitted breeding migraton model, annual survivorship estimates were calculated for each year from 2005 to 2100, for each of the three climate scenarios described previously.
+
+
+# Results: Projecting Survivorship under Future Climate Change
+
+<!-- Setup:
+        - State figure with good description
+        - Talk about why the MA is emphasized
+        - Comment on the variation
+-->
+@fig-survival-forecast displays estimates of annual adult survival for each year between 2008 and 2100, based on three future climate scenarios. The horizontal dashed line indicates adult survivorship estimated at the average environmental index values observed during the BLISS study period (2008 to 2022), and is referred to hereafter as the "baseline survival estimate" (~ 0.72). MA-smoothed estimates are emphasized in the plot to better distinguish the decadal trends produced by each scenario.  
+
+<!-- Describing the smoothed trends -->
+Barring the pronounced drop in average adult survival estimates from 2015 to 2030 in the most extreme case (SSP5), all three climate scenarios resulted in predictions that hovered around the baseline survivorship estimate until around 2060. Afterwards, the climate scenarios begin to produce divergent trends. Estimates derived from the climate scenarios SSP2 and SSP5 (representing moderate and extreme levels of fossil-fueled development respectively) both decrease below the baseline estimate, averaging around 0.66 in the final decade of the forecast. By contrast, survival in the most conservative scenario that we considered (SSP1) is expected to have increased relative to the baseline estimate, averaging around 0.77 in the last decade.
+
+Looking at the raw trends (the more transparent lines in @fig-survival-forecast), all climate scenarios produce survival estimates with pronounced interannual variability, especially past 2060. Before 2060, annual estimates range between 0.55 and 0.87, and between 0.45 and 0.91 afterwards. Further, annual survival estimates fall below 0.6 more often after 2060 in every scenario, but are rarer in earlier years.
+
+<!-- Compensatory effect of precipitation -->
+Notably, the favourable survivorship estimates from SSP1 were not observed when only the temperature effect from the post-hoc breeding mogration model was considered. Further, estimates from SSP5 decreased dramatically, approaching annual estimates of around 0.5 by the end of the century [see Supplement -@sec-appendix-survival]. These observations suggest that the significant effect of outbound precipitation detected by the post-hoc breeding migration model has an important compensatory effect on survival for the spotted salamanders of Bat Lake.
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+#| label: fig-survival-forecast
+#| fig-cap: "Time series of estimated adult survivorship from 2008 to 2100, based on environmental data derived from global climate model projections. Red-, green-, and blue-colored trendlines each represent different climate scenarios (see main text for details). Bolded lines show projections after MA smoothing was applied ($q = 6$), and raw projections are shown as transparent lines. The grey-shaded band indicates the BLISS study period (2008 to 2022), and the horizontal dashed lines indicate the adult survivorship estimated at the average environmental values observed during this period."
+#| fig-height: 6
+#| fig-width: 6
+
+plot_colours <- c(
+    "SSP1" = "forestgreen",
+    "SSP2" = "navyblue",
+    "SSP5" = "darkred"
+)
+dashed_intercept <- 0.72 # SOURCE: breeding migration model intercept (logit-inverted)
+MA_RADIUS <- 6
+
+# prepare data
+plotting_data <- index_forecasts %>% pivot_wider(
+    id_cols = year,
+    names_from = scenario,
+    values_from = c(survivorship)
+    ) %>%
+    filter(year >= 2008) %>%
+    mutate(
+        survivorship_SSP126_smooth = smooth.ma(SSP126, MA_RADIUS),
+        survivorship_SSP245_smooth = smooth.ma(SSP245, MA_RADIUS),
+        survivorship_SSP585_smooth = smooth.ma(SSP585, MA_RADIUS)
+    )
+
+plot <- plotting_data %>% ggplot(aes(x = year)) +
+    annotate(
+        "rect",
+        xmin = 2008, xmax = 2022,
+        ymin = -Inf, ymax = Inf,
+        fill = "grey", alpha = 0.3
+    ) +
+    geom_line(aes(y = dashed_intercept), linetype = "dashed") +
+    geom_line(aes(y = SSP126, colour = "SSP1"), alpha = 0.25) +
+    geom_line(aes(y = SSP245, colour = "SSP2"), alpha = 0.25) +
+    geom_line(aes(y = SSP585, colour = "SSP5"), alpha = 0.25) +
+    geom_line(aes(y = survivorship_SSP126_smooth, colour = "SSP1")) +
+    geom_line(aes(y = survivorship_SSP245_smooth, colour = "SSP2")) +
+    geom_line(aes(y = survivorship_SSP585_smooth, colour = "SSP5")) +
+    theme_classic() +
+    scale_colour_manual(
+        name = NULL,
+        values = plot_colours
+    ) +
+    labs(
+        x = "Time (Years)",
+        y = "Estimated Adult Survivorship"
+    ) + diagnostic_theme
+
+plot
+```
+
+<!-------------------------------------------------------------------------------------------------------------------->
+
+\newpage
+\part*{Supplement}
+\appendix
+\counterwithin{figure}{section}
+\counterwithin{table}{section}
+\renewcommand{\thefigure}{\thesection\arabic{figure}}
+\renewcommand{\thetable}{\thesection\arabic{table}}
+
+# Statistical Bias Corrections {#sec-appendix-bc}
 
 The daily projections of mean temperature, minimum temperature, and total precipitation used in this study (hereafter referred to as "climate projections") were sourced originally from the Coupled Model Intercomparison Project Phase 6 (CMIP6) dataset, which provides daily estimates of these climate variables under various socio-political scenarios (called "Shared Socioeconomic Pathways", often abbreviated as SSPs). Since GCM output is coarse-grained, Environment and Climate Change Canada provides downscaled estimates with higher spatial resolution [10 $\text{km}^2$; @eyring_CMIP6_2016], for each of three SSPs (SSP1, SSP2, and SSP5 ; see [@riahi_scenarios_2017] for detailed definitions). These are more appropriate for the analysis of highly localized populations such as the Bat Lake spotted salamander population. Even with downscaling, however, climate projections are often still systematically biased [@sharma_BC_2007; @hagemann_BC_2011]; while observed trends are often accurately reproduced, estimates may deviate substantially from observations in their absolute values and/or interannual variations.
 
@@ -197,6 +246,13 @@ kable(
 #| fig-height: 7
 #| fig-width: 6
 
+# shared plotting constants for the diagnostic figures below
+plot_colours <- c(
+    "Observed" = "black",
+    "Simulated" = "navyblue",
+    "Bias-corrected" = "forestgreen"
+)
+
 # prepare data
 Fig_data <- BC_diagnostics %>%
     filter(year == DIAGNOSTIC_YEAR)
@@ -263,18 +319,16 @@ Panel_C <- Fig_data %>% ggplot(aes(x = displayDay)) +
 
 # Forecasting Environmental Indices & Survival Probabilities {#sec-appendix-survival}
 
-Bias-corrected daily weather forecasts were used to calculate four key measures, for each year from 2005 to 2100. First, average mean daily tempatures in April were used to predict the breeding season start date (during the BLISS study period, these measures were strongly correlated; $|\rho| = 0.5$). Breeding season end date was calculated directly from the start date, by adding the average breeding season length observed during the BLISS study period. Using the forecasted breeding season interval, we calculated the temperature and precipitation indices as they were calculated in the posthoc breeding migration model (see main text for their formulas). This series of predictions and calculations was made for each climate scenario separatetely.
+Bias-corrected daily weather forecasts were used to calculate four key measures, for each year from 2005 to 2100. First, average mean daily tempatures in April were used to predict the breeding season start date (during the BLISS study period, these measures were strongly correlated; $|\rho| = 0.73$). Breeding season end date was calculated directly from the start date, by adding the average breeding season length observed during the BLISS study period. Using the forecasted breeding season interval, we calculated the inbound temperature and outbound precipitation indices as they were calculated in the posthoc breeding migration model (see main text for their formulas). This series of predictions and calculations was made for each climate scenario separatetely.
 
-<!-- TODO: replace the rho value with the actual value. -->
-
-@fig-index-forecast displays the resulting time series of estimates for the breeding season start date and both climate indices. These graphs are also overlayed with the observed values during the BLISS study period. Average index hindcasts over this period were very similar to observed averages, for all climate scenarios. However, observed temperature indices displayed more annual variability that hindcasted ones.
+@fig-index-forecast displays the resulting time series of estimates for the breeding season start date and both climate indices. These graphs are also overlayed with the observed values during the BLISS study period. Average index hindcasts over this period were very similar to observed averages, for all climate scenarios. We note, however, that observed outbound temperature indices displayed more annual variability that hindcasted ones.
 
 ```{r}
 #| warning: false
 #| message: false
 #| echo: false
 #| label: fig-index-forecast
-#| fig-cap: "Time series of observed (black), and forecasted (coloured) indices, from 2005 to 2100. Panels A, B, and C display breeding season start date, temperature, and precipitation indices respectively. The grey shaded areas represent the BLISS study period (2008 to 2022), and the horizontal dashed lines indicate the average observed index values during this period. The climate scenario labelled 'SSP2' is emphasized for visual contrast."
+#| fig-cap: "Time series of observed (black), and forecasted (coloured) indices, from 2005 to 2100. Panels A, B, and C display breeding season start date, inbound temperature, and outbound precipitation indices respectively. The grey shaded areas represent the BLISS study period (2008 to 2022), and the horizontal dashed lines indicate the average observed index values during this period. The climate scenario labelled 'SSP2' is emphasized for visual contrast."
 #| fig-height: 7
 #| fig-width: 6
 
@@ -376,87 +430,92 @@ panel_C <- plotting_data %>% ggplot(aes(x = year)) +
     plot_annotation(theme = theme(legend.position = "top"))
 ```
 
-Forecasted climate indices (panel B and C in @fig-index-forecast) were used to estimate adult female survivial probabilities over the century, using the posthoc breeding migration model fit in the main text. The survival probability at year $t$ ($S_a(t)$) was derived from the temperature ($\text{Temp}$) and precipitation ($\text{Precip}$) indices estimated for that year using the following formula:
+Forecasted climate indices (panel B and C in @fig-index-forecast) were used to estimate adult survivial probabilities over the century, using the posthoc breeding migration model fit in the main text. The survival probability at year $t$ ($S_a(t)$) was derived from the temperature ($\text{Temp}$) and precipitation ($\text{Precip}$) indices estimated for that year using the following formula:
 
 $$
 S_a(t) = \text{logit}^{-1}\left[\beta_0 + \beta_1 \text{Temp(t)} + \beta_2 \text{Precip(t)}\right]
 $$ {#eq-survival-calculation}
-where $\beta_1$, $\beta_2$, and $\beta_3$ were fit using the breeding migration model. The resulting survival forecast for each climate scenario is displayed in @fig-survival-forecast.
+where $\beta_1$, $\beta_2$, and $\beta_3$ were fit using the breeding migration model. The resulting survival forecast for each climate scenario is shown in the Results section of the main text.
+
+
+# Supplement for Results {#sec-appendix-results}
 
 ```{r}
 #| warning: false
 #| message: false
 #| echo: false
-#| label: fig-survival-forecast
-#| fig-cap: "Time series of estimated adult female survivorship ($S_a$) from 2005 to 2100, based on environmental data derived from global climate model projections. Three climate scenario (SSP1, SSP2, and SSP3) were considered, and their trends are colored accordingly. The horizontal dashed line indicates the adult female survivorship estimated at the average environmental values observed during the BLISS study period (2008 to 2022). Both smoothed (bold) and raw (faded) projections are shown. Smoothed trends are emphasized to better visualize differences between the climate scenarios."
-#| fig-height: 4
+#| label: fig-survival-forecast-alt
+#| fig-cap: "Effect-suppressed forecasts of adult survivorship of Bat Lake spotted salamanders, until 2100. Red, green, and blue forecasts each represent three different climate scenarios (see main text for details). Bolded lines show projections after MA smoothing was applied ($q = 6$), and raw projections are shown as transparent lines. Smoothed trends are emphasized to better distinguish the climate scenarios. (A) displays the forecast when only the effect of spring temperature is included, and (B) displays the forecast when only the effect of outbound precipitation is included. The horizontal dashed lines indicate the adult survivorship estimated at the average environmental values observed during the BLISS study period (2008 to 2022)."
+#| fig-height: 6
 #| fig-width: 6
 
-dashed_intercept <- 0.72
+plot_colours <- c(
+    "SSP1" = "forestgreen",
+    "SSP2" = "navyblue",
+    "SSP5" = "darkred"
+)
+dashed_intercept <- 0.72 # SOURCE: breeding migration model intercept (logit-inverted)
 MA_RADIUS <- 6
 
-plotting_data <- plotting_data %>%
+# prepare data
+plotting_data <- index_forecasts %>% pivot_wider(
+    id_cols = year,
+    names_from = scenario,
+    values_from = c(survivorshipT, survivorshipP)) %>%
+    filter(year >= 2008) %>%
     mutate(
-        survivorship_SSP126_smooth = smooth.ma(survivorship_SSP126, MA_RADIUS),
-        survivorship_SSP245_smooth = smooth.ma(survivorship_SSP245, MA_RADIUS),
-        survivorship_SSP585_smooth = smooth.ma(survivorship_SSP585, MA_RADIUS)
+        survivorshipT_SSP126_smooth = smooth.ma(survivorshipT_SSP126, MA_RADIUS),
+        survivorshipT_SSP245_smooth = smooth.ma(survivorshipT_SSP245, MA_RADIUS),
+        survivorshipT_SSP585_smooth = smooth.ma(survivorshipT_SSP585, MA_RADIUS),
+        survivorshipP_SSP126_smooth = smooth.ma(survivorshipP_SSP126, MA_RADIUS),
+        survivorshipP_SSP245_smooth = smooth.ma(survivorshipP_SSP245, MA_RADIUS),
+        survivorshipP_SSP585_smooth = smooth.ma(survivorshipP_SSP585, MA_RADIUS)
     )
 
-plot <- plotting_data %>% ggplot(aes(x = year)) +
+# Panel A: temperature-only effect
+panel_A <- plotting_data %>% ggplot(aes(x = year)) +
     geom_line(aes(y = dashed_intercept), linetype = "dashed") +
-    geom_line(aes(y = survivorship_SSP126, colour = "SSP1"), alpha = 0.25) +
-    geom_line(aes(y = survivorship_SSP245, colour = "SSP2"), alpha = 0.25) +
-    geom_line(aes(y = survivorship_SSP585, colour = "SSP5"), alpha = 0.25) +
-    geom_line(aes(y = survivorship_SSP126_smooth, colour = "SSP1")) +
-    geom_line(aes(y = survivorship_SSP245_smooth, colour = "SSP2")) +
-    geom_line(aes(y = survivorship_SSP585_smooth, colour = "SSP5")) +
+    geom_line(aes(y = survivorshipT_SSP126, colour = "SSP1"), alpha = 0.25) +
+    geom_line(aes(y = survivorshipT_SSP245, colour = "SSP2"), alpha = 0.25) +
+    geom_line(aes(y = survivorshipT_SSP585, colour = "SSP5"), alpha = 0.25) +
+    geom_line(aes(y = survivorshipT_SSP126_smooth, colour = "SSP1")) +
+    geom_line(aes(y = survivorshipT_SSP245_smooth, colour = "SSP2")) +
+    geom_line(aes(y = survivorshipT_SSP585_smooth, colour = "SSP5")) +
     theme_classic() +
     scale_colour_manual(
         name = NULL,
         values = plot_colours
     ) +
     labs(
+        title = "A. Survivorship Forecasts (Precipitation Effects Supressed)",
         x = "Time (Years)",
-        y = "Estimated Adult Female Survivorship"
+        y = "Estimated Adult Survivorship"
     ) + diagnostic_theme
 
-plot
+# Panel B: precipitation-only effect
+panel_B <- plotting_data %>% ggplot(aes(x = year)) +
+    geom_line(aes(y = dashed_intercept), linetype = "dashed") +
+    geom_line(aes(y = survivorshipP_SSP126, colour = "SSP1"), alpha = 0.25) +
+    geom_line(aes(y = survivorshipP_SSP245, colour = "SSP2"), alpha = 0.25) +
+    geom_line(aes(y = survivorshipP_SSP585, colour = "SSP5"), alpha = 0.25) +
+    geom_line(aes(y = survivorshipP_SSP126_smooth, colour = "SSP1")) +
+    geom_line(aes(y = survivorshipP_SSP245_smooth, colour = "SSP2")) +
+    geom_line(aes(y = survivorshipP_SSP585_smooth, colour = "SSP5")) +
+    theme_classic() +
+    scale_colour_manual(
+        name = NULL,
+        values = plot_colours
+    ) +
+    labs(
+        title = "B. Survivorship Forecasts (Temperature Effects Supressed)",
+        x = "Time (Years)",
+        y = "Estimated Adult Survivorship"
+    ) + diagnostic_theme
+
+(panel_A / panel_B) +
+    plot_layout(guides = "collect") &
+    theme(legend.position = "top")
 ```
-
-# Population Growth Model Specification {#sec-appendix-forecast}
-
-We used a simple, deterministic matrix model to forecast the female Bat Lake spotted salamander population through time. Let $\textbf{N}_t$ be a vector representing the population of salamanders, binned into age groups, in year $t$. Then, the population in the following year ($\textbf{N}_{t+1}$) is calculated as follows:
-
-$$
-\textbf{N}_{t+1} = \textbf{N}_t \cdot \textbf{L}_t
-$$ {#eq-growth-model}
-
-
-where $\textbf{L}_t$ is the population projection matrix in year $t$, defined to be:
-
-$$
-\textbf{L}_t =
-\begin{bmatrix}
-0 & 0 & 0 & 0 & 0 & 0 & f \\
-S_m & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & S_m & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & S_m & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & S_m & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & S_m & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & S_m & S_a(t)
-\end{bmatrix}
-$$ {#eq-projection-matrix}
-
-Population growth in this model is governed primarily by the annual adult female survivorship term $S_a\left(t\right)$, which varies from year to year according to those environmental characteristics which correlated with survivorship in the CJS survivorship model fit in the main paper (@eq-survival-calculation). However, population growth in this model also depends on two other life-history parameters ($f$ and $S_m$), which were assumed to be constant over time. $f$ represents the average number of female offspring that will survive a full year that are produced by a single mature female. This was set to 0.705, derived from Moldowan, 2023. $S_m$ represents subadult survivorship, and an estimate for this value could not be found in the literature. As such, $S_m$ was numerically optimized such that the resulting model had a finite rate of increase $\lambda$ near 1, when $S_a\left(t\right)=\text{logit}^{-1}(\beta_0) \approx 0.72$ (i.e., adult female survivorship assuming study-average temperature and precipitation indices). We thought this decision sensible since the population did not show signs of increase or decrease during the BLISS study period (2008 to 2022). This baseline survivorship was also used to derive the stable-age distribution of the population, using the `eigen.analysis` function from the `popbio` package in R. Projections were initialized in the year 2019 at the base model’s stable age distribution with 1840 starting adult females.
-
-Given the uncertainty around some of our modelling decisions, we tested the robustness of our population projections by varying the following elements of our projection and comparing the output with the base run:
-
-  - Different combinations of the non-focal parameters $p$ and $S_m$ (holding $\lambda \approx 1$ in each case)
-  - Different age-at-maturity (checked from 5 to 9)
-  - Earlier starting year (checked from 2000 to 2025).
-  - Different starting abundance (checked from 1000 to 2000).
-
-These tests revealed that our population projection results were similar under other reasonable life-history assumptions and projection initializations. In particular, the relative trends in abundance across different climate scenarios were qualitatively preserved in each case. Therefore, the only effective assumptions being made when translating survivorship forecasts to abundance forecasts is that $\lambda \approx 1$, and that the population is at stable-age distribution.
 
 # References
 

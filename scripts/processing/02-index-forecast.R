@@ -25,9 +25,10 @@ OBS_P_MEAN <- mean(BLISS_study_data$precipIndex)
 OBS_P_SD <- sd(BLISS_study_data$precipIndex)
 
 # regression coefficients
-# SOURCE: Dylan personal regression and model fitting
+# SOURCE: I regressed this
 B0_APRIL <- 125.5190
 B1_APRIL <- -3.1373
+# SOURCE: fitted post-hoc breeding migration model
 B0_SURVIVAL <- 0.9656941
 B1_SURVIVAL <- -0.762042
 B2_SURVIVAL <- 0.4460179
