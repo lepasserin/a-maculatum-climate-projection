@@ -8,6 +8,9 @@ format: pdf
 linestretch: 1.5
 number-sections: true
 bibliography: references.bib
+header-includes:
+  - \usepackage{setspace}
+  - \AtBeginEnvironment{CSLReferences}{\singlespacing}
 ---
 
 <!-- QUESTIONS FOR DYLAN:
@@ -438,7 +441,7 @@ $$ {#eq-survival-calculation}
 where $\beta_1$, $\beta_2$, and $\beta_3$ were fit using the breeding migration model. The resulting survival forecast for each climate scenario is shown in the Results section of the main text.
 
 
-# Supplement for Results {#sec-appendix-results}
+# {#sec-appendix-results .unnumbered}
 
 ```{r}
 #| warning: false
