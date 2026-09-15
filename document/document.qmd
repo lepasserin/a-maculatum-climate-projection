@@ -1,6 +1,6 @@
 ---
 title: Climate Impact Analysis of Bat Lake Salamanders (*A. maculatum*)
-abstract: This report describes the methods and results of a data-scientific pipeline forecasting survivorship probabilities of a northern population of yellow spotted salamanders under alternate climate scenarios. The writing and figures presented here form part of a larger research paper on *A. maculatum* survivorship (Kaufman et al., 20XX). All code and data used to complete this sub-analysis are viewable at <https://github.com/lepasserin/a-maculatum-climate-impact>.
+abstract: This report describes the methods and results of a data-scientific pipeline forecasting survivorship probabilities of a northern population of yellow spotted salamanders under alternate climate scenarios. The writing and figures presented here form part of a larger manuscript on *A. maculatum* survivorship. All code and data used to complete this sub-analysis are viewable at <https://github.com/lepasserin/a-maculatum-climate-impact>.
 author: Benedict Cummins-Mburu
 date: today
 date-format: long
@@ -16,7 +16,6 @@ header-includes:
 <!-- QUESTIONS FOR DYLAN:
     - Can I have access to your model object in R? Just to see what information I have access to. Plus, fun to see the R^2 and coeffient uncertainty.
 -->
-
 
 ```{r}
 #| include: false
@@ -118,7 +117,7 @@ Notably, the favourable survivorship estimates from SSP1 were not observed when 
 #| echo: false
 #| label: fig-survival-forecast
 #| fig-cap: "Time series of estimated adult survivorship from 2008 to 2100, based on environmental data derived from global climate model projections. Red-, green-, and blue-colored trendlines each represent different climate scenarios (see main text for details). Bolded lines show projections after MA smoothing was applied ($q = 6$), and raw projections are shown as transparent lines. The grey-shaded band indicates the BLISS study period (2008 to 2022), and the horizontal dashed lines indicate the adult survivorship estimated at the average environmental values observed during this period."
-#| fig-height: 6
+#| fig-height: 4
 #| fig-width: 6
 
 plot_colours <- c(
@@ -162,9 +161,11 @@ plot <- plotting_data %>% ggplot(aes(x = year)) +
         values = plot_colours
     ) +
     labs(
-        x = "Time (Years)",
+        x = "Years",
         y = "Estimated Adult Survivorship"
-    ) + diagnostic_theme
+    ) + 
+    diagnostic_theme +
+    theme(axis.title = element_text(size = 12, face = "bold"))
 
 plot
 ```
